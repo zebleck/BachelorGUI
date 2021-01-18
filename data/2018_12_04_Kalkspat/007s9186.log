@@ -1,0 +1,83 @@
+Mon,03-Dec-2018 01:18:30PM   Measurement started (Software version: 3.2.1.15 Preview_4).
+Mon,03-Dec-2018 01:18:30PM   Move Cup L1 to Position  5.450
+Mon,03-Dec-2018 01:18:30PM   Move Cup H1 to Position  6.525
+Mon,03-Dec-2018 01:18:30PM   Move Cup H2 to Position 16.400
+Mon,03-Dec-2018 01:18:30PM   Move Cup H3 to Position 31.500
+Mon,03-Dec-2018 01:18:34PM   Waiting for Parameter Ramps...
+Mon,03-Dec-2018 01:18:37PM   Low Cup Motor Position started
+Mon,03-Dec-2018 01:18:37PM   High Cup Motor Position started
+Mon,03-Dec-2018 01:18:37PM   Low Cup Motor Position is ok
+Mon,03-Dec-2018 01:18:37PM   High Cup Motor Position is ok
+Mon,03-Dec-2018 01:18:39PM   Parameter Ramps done.
+Mon,03-Dec-2018 01:18:52PM   Wash Autosampler.
+Mon,03-Dec-2018 01:19:06PM   Moving Autosampler to Position 1, 1
+Mon,03-Dec-2018 01:20:08PM   Autosampler done.
+
+Mon,03-Dec-2018 01:20:08PM   Current Experiment is EXP_PEAKCENTER.
+Mon,03-Dec-2018 01:20:10PM   Exec PCL: PeakCenter(234.040945,8,0,0)
+Mon,03-Dec-2018 01:20:10PM   Start PeakCenter
+Mon,03-Dec-2018 01:20:10PM   CupPosition: 8.000000 
+Mon,03-Dec-2018 01:20:13PM   Measured Intensity: 12.642716 
+Mon,03-Dec-2018 01:20:13PM   Position HIGH 3 Cup 8  Mass 238.051  Pos  31.500  Ampl 10 Chan 0   Faraday 
+
+Mon,03-Dec-2018 01:20:13PM   Old Mass: 238.050782 
+Mon,03-Dec-2018 01:20:13PM   Center Mass: 234.040945  and used MassTolerance: 0.026005 
+Mon,03-Dec-2018 01:20:55PM   MassDifference:	0.007582	 and New Mass: 238.043200 
+Mon,03-Dec-2018 01:20:56PM   Peakcenter successful!
+
+Mon,03-Dec-2018 01:20:56PM   Current Experiment is EXP_PEAKCENTER.
+Mon,03-Dec-2018 01:20:57PM   Exec PCL: PeakCenter(230.033126,5,0,0)
+Mon,03-Dec-2018 01:20:57PM   Start PeakCenter
+Mon,03-Dec-2018 01:20:57PM   CupPosition: 5.000000 
+Mon,03-Dec-2018 01:20:59PM   Measured Intensity: 0.000184 
+Mon,03-Dec-2018 01:20:59PM   Position CENTER Cup 5  Mass 230.033  Pos   0.000  Ampl 9  Chan 1   Faraday Ion Counter SEM 
+
+Mon,03-Dec-2018 01:20:59PM   Old Mass: 230.033126 
+Mon,03-Dec-2018 01:20:59PM   Center Mass: 230.033126  and used MassTolerance: 0.025559 
+Mon,03-Dec-2018 01:21:42PM   MassDifference:	0.004775	 and New Mass: 230.028351 
+Mon,03-Dec-2018 01:21:43PM   Peakcenter successful!
+
+Mon,03-Dec-2018 01:21:43PM   Current Experiment is EXP_PEAKCENTER.
+Mon,03-Dec-2018 01:21:43PM   Exec PCL: PeakCenter(229.031755,5,0,0)
+Mon,03-Dec-2018 01:21:43PM   Start PeakCenter
+Mon,03-Dec-2018 01:21:43PM   CupPosition: 5.000000 
+Mon,03-Dec-2018 01:21:46PM   Measured Intensity: 0.000150 
+Mon,03-Dec-2018 01:21:46PM   Position CENTER Cup 5  Mass 229.032  Pos   0.000  Ampl 9  Chan 1   Faraday Ion Counter SEM 
+
+Mon,03-Dec-2018 01:21:46PM   Old Mass: 229.031755 
+Mon,03-Dec-2018 01:21:46PM   Center Mass: 229.031755  and used MassTolerance: 0.025448 
+Mon,03-Dec-2018 01:22:29PM   MassDifference:	0.003146	 and New Mass: 229.028609 
+Mon,03-Dec-2018 01:22:29PM   Peakcenter successful!
+
+Reading cup configuration: Name: uth.ccf,Mass Set: Main.
+
+Mon,03-Dec-2018 01:22:30PM   Current Experiment is EXP_MEASURE.
+Mon,03-Dec-2018 01:22:30PM   Current Block is 1.
+
+**************************************************************************
+Current Settings at Start of Block 1:
+
+Extraction[V]:         -2000.0
+Focus[V]:              -613.6
+Source Quad1[V]:       248.3
+Rot-Quad1[V]:           -0.7
+Foc-Quad1[V]:          -19.5
+Rot-Quad2[V]:           -0.1
+Source Offset[V]:        0.0
+Matsuda Plate[V]:       -1.1
+Cool Gas[l/min]:        16.2
+Aux Gas[l/min]:          0.8
+Sample Gas[l/min]:       0.8
+Add Gas[l/min]:          0.0
+Org Gas[l/min]:          0.0
+Operation Power[W]:    1302.6
+X-Pos[mm]:              -0.7
+Y-Pos[mm]:              -2.3
+Z-Pos[mm]:              -1.8
+Ampl.-Temp[°C]:        46.81
+Fore Vacuum[mbar]:     1.2699e-003
+High Vacuum[mbar]:     2.3889e-007
+IonGetter-Press[mbar]: 1.7768e-008
+
+**************************************************************************
+Mon,03-Dec-2018 01:29:14PM   CHeaterControl: Send Message TM_MEASURE_DONE.

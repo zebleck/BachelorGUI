@@ -1,0 +1,86 @@
+Thu,05-Mar-2020 11:24:47AM   Measurement started (Software version: 3.2.1.15 Preview_4).
+Thu,05-Mar-2020 11:24:48AM   Move Cup L1 to Position  5.450
+Thu,05-Mar-2020 11:24:48AM   Move Cup H1 to Position  6.525
+Thu,05-Mar-2020 11:24:48AM   Move Cup H2 to Position 16.400
+Thu,05-Mar-2020 11:24:48AM   Move Cup H3 to Position 31.500
+Thu,05-Mar-2020 11:24:51AM   Waiting for Parameter Ramps...
+Thu,05-Mar-2020 11:24:55AM   Low Cup Motor Position started
+Thu,05-Mar-2020 11:24:55AM   High Cup Motor Position started
+Thu,05-Mar-2020 11:24:55AM   High Cup Motor Position is ok
+Thu,05-Mar-2020 11:24:55AM   Low Cup Motor Position is ok
+Thu,05-Mar-2020 11:24:57AM   Parameter Ramps done.
+Thu,05-Mar-2020 11:25:10AM   Wash Autosampler.
+Thu,05-Mar-2020 11:25:24AM   Moving Autosampler to Position 1, 1
+Thu,05-Mar-2020 11:26:36AM   Autosampler done.
+
+Thu,05-Mar-2020 11:26:36AM   Current Experiment is EXP_PEAKCENTER.
+Thu,05-Mar-2020 11:26:36AM   Exec PCL: PeakCenter(234.040945,8,0,0)
+Thu,05-Mar-2020 11:26:36AM   Start PeakCenter
+Thu,05-Mar-2020 11:26:37AM   CupPosition: 8.000000 
+Thu,05-Mar-2020 11:26:39AM   Measured Intensity: 58.187992 
+Thu,05-Mar-2020 11:26:39AM   Position HIGH 3 Cup 8  Mass 238.051  Pos  31.500  Ampl 10 Chan 0   Faraday 
+
+Thu,05-Mar-2020 11:26:39AM   Old Mass: 238.050782 
+Thu,05-Mar-2020 11:26:39AM   Center Mass: 234.040945  and used MassTolerance: 0.026005 
+Thu,05-Mar-2020 11:27:22AM   MassDifference:	0.071847	 and New Mass: 238.122629 
+Thu,05-Mar-2020 11:28:04AM   MassDifference:	0.008621	 and New Mass: 238.042161 
+Thu,05-Mar-2020 11:28:05AM   Peakcenter successful!
+
+Thu,05-Mar-2020 11:28:05AM   Current Experiment is EXP_PEAKCENTER.
+Thu,05-Mar-2020 11:28:07AM   Exec PCL: PeakCenter(230.033126,5,0,0)
+Thu,05-Mar-2020 11:28:07AM   Start PeakCenter
+Thu,05-Mar-2020 11:28:07AM   CupPosition: 5.000000 
+Thu,05-Mar-2020 11:28:10AM   Measured Intensity: 0.000924 
+Thu,05-Mar-2020 11:28:10AM   Position CENTER Cup 5  Mass 230.033  Pos   0.000  Ampl 9  Chan 1   Faraday Ion Counter SEM 
+
+Thu,05-Mar-2020 11:28:10AM   Old Mass: 230.033126 
+Thu,05-Mar-2020 11:28:10AM   Center Mass: 230.033126  and used MassTolerance: 0.025559 
+Thu,05-Mar-2020 11:28:52AM   MassDifference:	0.071164	 and New Mass: 230.104290 
+Thu,05-Mar-2020 11:29:35AM   MassDifference:	0.016113	 and New Mass: 230.017013 
+Thu,05-Mar-2020 11:29:36AM   Peakcenter successful!
+
+Thu,05-Mar-2020 11:29:36AM   Current Experiment is EXP_PEAKCENTER.
+Thu,05-Mar-2020 11:29:37AM   Exec PCL: PeakCenter(229.031755,5,0,0)
+Thu,05-Mar-2020 11:29:37AM   Start PeakCenter
+Thu,05-Mar-2020 11:29:37AM   CupPosition: 5.000000 
+Thu,05-Mar-2020 11:29:40AM   Measured Intensity: 0.000622 
+Thu,05-Mar-2020 11:29:40AM   Position CENTER Cup 5  Mass 229.032  Pos   0.000  Ampl 9  Chan 1   Faraday Ion Counter SEM 
+
+Thu,05-Mar-2020 11:29:40AM   Old Mass: 229.031755 
+Thu,05-Mar-2020 11:29:40AM   Center Mass: 229.031755  and used MassTolerance: 0.025448 
+Thu,05-Mar-2020 11:30:22AM   MassDifference:	0.069204	 and New Mass: 229.100959 
+Thu,05-Mar-2020 11:31:05AM   MassDifference:	0.006274	 and New Mass: 229.025481 
+Thu,05-Mar-2020 11:31:05AM   Peakcenter successful!
+
+Reading cup configuration: Name: uth.ccf,Mass Set: Main.
+
+Thu,05-Mar-2020 11:31:06AM   Current Experiment is EXP_MEASURE.
+Thu,05-Mar-2020 11:31:06AM   Current Block is 1.
+
+**************************************************************************
+Current Settings at Start of Block 1:
+
+Extraction[V]:         -2000.0
+Focus[V]:              -604.8
+Source Quad1[V]:       248.2
+Rot-Quad1[V]:           -0.7
+Foc-Quad1[V]:          -19.5
+Rot-Quad2[V]:           -0.1
+Source Offset[V]:        0.0
+Matsuda Plate[V]:       -1.1
+Cool Gas[l/min]:        16.2
+Aux Gas[l/min]:          0.8
+Sample Gas[l/min]:       0.8
+Add Gas[l/min]:          0.0
+Org Gas[l/min]:          0.0
+Operation Power[W]:    1302.1
+X-Pos[mm]:              -0.5
+Y-Pos[mm]:              -2.8
+Z-Pos[mm]:              -1.9
+Ampl.-Temp[°C]:        46.70
+Fore Vacuum[mbar]:     1.0175e-003
+High Vacuum[mbar]:     1.7181e-007
+IonGetter-Press[mbar]: 3.6391e-009
+
+**************************************************************************
+Thu,05-Mar-2020 11:38:42AM   CHeaterControl: Send Message TM_MEASURE_DONE.

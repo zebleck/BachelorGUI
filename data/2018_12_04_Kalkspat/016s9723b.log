@@ -1,0 +1,47 @@
+Mon,03-Dec-2018 02:25:49PM   Measurement started (Software version: 3.2.1.15 Preview_4).
+Mon,03-Dec-2018 02:25:50PM   Move Cup L1 to Position  5.450
+Mon,03-Dec-2018 02:25:50PM   Move Cup H1 to Position  6.525
+Mon,03-Dec-2018 02:25:50PM   Move Cup H2 to Position 16.400
+Mon,03-Dec-2018 02:25:50PM   Move Cup H3 to Position 31.500
+Mon,03-Dec-2018 02:25:54PM   Waiting for Parameter Ramps...
+Mon,03-Dec-2018 02:25:57PM   Low Cup Motor Position started
+Mon,03-Dec-2018 02:25:57PM   High Cup Motor Position started
+Mon,03-Dec-2018 02:25:57PM   Low Cup Motor Position is ok
+Mon,03-Dec-2018 02:25:57PM   High Cup Motor Position is ok
+Mon,03-Dec-2018 02:25:59PM   Parameter Ramps done.
+Mon,03-Dec-2018 02:26:12PM   Wash Autosampler.
+Mon,03-Dec-2018 02:26:25PM   Moving Autosampler to Position 3, 2
+Mon,03-Dec-2018 02:27:27PM   Autosampler done.
+
+Reading cup configuration: Name: uth.ccf,Mass Set: Main.
+
+Mon,03-Dec-2018 02:27:27PM   Current Experiment is EXP_MEASURE.
+Mon,03-Dec-2018 02:27:27PM   Current Block is 1.
+
+**************************************************************************
+Current Settings at Start of Block 1:
+
+Extraction[V]:         -2000.0
+Focus[V]:              -613.6
+Source Quad1[V]:       248.3
+Rot-Quad1[V]:           -0.8
+Foc-Quad1[V]:          -19.5
+Rot-Quad2[V]:           -0.1
+Source Offset[V]:        0.0
+Matsuda Plate[V]:       -1.1
+Cool Gas[l/min]:        16.2
+Aux Gas[l/min]:          0.8
+Sample Gas[l/min]:       0.8
+Add Gas[l/min]:          0.0
+Org Gas[l/min]:          0.0
+Operation Power[W]:    1302.6
+X-Pos[mm]:              -0.7
+Y-Pos[mm]:              -2.3
+Z-Pos[mm]:              -1.8
+Ampl.-Temp[°C]:        46.81
+Fore Vacuum[mbar]:     1.2338e-003
+High Vacuum[mbar]:     2.3889e-007
+IonGetter-Press[mbar]: 1.5525e-008
+
+**************************************************************************
+Mon,03-Dec-2018 02:44:12PM   CHeaterControl: Send Message TM_MEASURE_DONE.
