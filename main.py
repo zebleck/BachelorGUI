@@ -1,7 +1,8 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QTabWidget
+from PyQt5.QtWidgets import QTabWidget, QFileDialog
 from PyQt5.QtGui import QIcon
 import sys
+import os
 
 from Analyzer import Analyzer
 from InputTabWidget import InputTabWidget
@@ -9,6 +10,7 @@ from AnalysisTabWidget import AnalysisTabWidget
 
 from RatioBuilding import RatioBuilder
 import DataFolderUtil
+import warnings
 
 
 class Window(QtWidgets.QMainWindow):
@@ -25,10 +27,12 @@ class Window(QtWidgets.QMainWindow):
         self.analyzer = Analyzer()
 
         self.inputTab = InputTabWidget(self, self.ratioBuilder)
-        self.analysisTab = AnalysisTabWidget(self, self.ratioBuilder)
+        self.analysisTab = AnalysisTabWidget(self, self.ratioBuilder, self.analyzer)
         self.tabWidget.addTab(self.inputTab, 'Input')
         self.tabWidget.addTab(self.analysisTab, 'Analysis')
         self.setCentralWidget(self.tabWidget)
+
+        self.inputTab.dirNameEdit.textChanged.connect(lambda: self.setPaths(self.inputTab.dirNameEdit.text()))
 
         self.initMenu()
         self.show()
@@ -47,8 +51,17 @@ class Window(QtWidgets.QMainWindow):
         fileMenu = mainMenu.addMenu('&File')
         fileMenu.addAction(extractAction)
 
-    def runAnalysis(self, path):
+    def setPaths(self, path):
+        if not os.path.isdir(path):
+            return
+
+        self.analysisTab.searchMetadataFile(path)
+        self.analyzer.set_path(path)
+
+
+    def calcRatios(self, path):
         DataFolderUtil.createDataFolders(path)
+        self.ratioBuilder.set_path(path)
         self.ratioBuilder.set_constants(self.inputTab.get_constants())
         self.ratioBuilder.set_specific_constants(self.inputTab.get_specific_constants())
         self.ratioBuilder.yhas_uranium()
@@ -56,7 +69,11 @@ class Window(QtWidgets.QMainWindow):
         self.ratioBuilder.calc_blank_correction()
         self.ratioBuilder.data_correction()
 
+    def startAnalysis(self, metadatapath):
+        self.analyzer.set_path(self.ratioBuilder.data_root_folder)
         self.analyzer.set_constants(self.inputTab.get_constants())
+        self.analyzer.set_metadata(metadatapath)
+
         self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
 
         self.analysisTab.display()
@@ -66,6 +83,7 @@ class Window(QtWidgets.QMainWindow):
 
 
 if __name__ == '__main__':
+    warnings.filterwarnings("ignore")
     app = QtWidgets.QApplication(sys.argv)
     GUI = Window()
     sys.exit(app.exec_())

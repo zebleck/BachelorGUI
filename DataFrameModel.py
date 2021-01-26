@@ -22,19 +22,23 @@ class DataFrameModel(QtCore.QAbstractTableModel):
         if index.isValid():
             if role == Qt.DisplayRole:
                 try:
-                    return '{:.4e}'.format(self._data.iloc[index.row(), index.column()])
+                    return str(self._data.iloc[index.row(), index.column()])#'{:.4e}'.format(self._data.iloc[index.row(), index.column()])
                 except:
                     return str(self._data.iloc[index.row(), index.column()])
-            if role == Qt.FontRole and index.column() == 0:
+            if role == Qt.FontRole and self._data[''][index.row()] == '':
                 font = QFont()
                 font.setBold(True)
                 return font
+            if role == Qt.TextAlignmentRole and self._data[''][index.row()] == '':
+                return Qt.AlignCenter
             if role == Qt.BackgroundRole:
                 if self.standards is not None:
-                    if self.standards in self._data[''][index.row()]:
-                        return QtGui.QBrush(QtGui.QColor(220, 220, 220))
-                    else:
+                    if self._data[''][index.row()] == '':
+                        return QtGui.QBrush(Qt.white)
+                    elif self.standards in self._data[''][index.row()]:
                         return QtGui.QBrush(QtGui.QColor(200, 255, 220))
+                    else:
+                        return QtGui.QBrush(QtGui.QColor(220, 220, 220))
                 return QtGui.QBrush(Qt.white)
 
         return None

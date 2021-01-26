@@ -2,12 +2,10 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QLineEdit, QLabel, 
                             QTableWidget, QTableWidgetItem, QHeaderView, QListWidget, QListWidgetItem, QFileDialog, QHBoxLayout, QSpacerItem, \
                             QTableView
 from PyQt5.QtCore import Qt
-from PyQt5 import QtGui
 import pyqtgraph as pg
 from pyqtgraph import QtGui
 from PyQt5 import QtWidgets
 import os
-from RatioBuilding import RatioBuilder
 from ConstantsDialog import ConstantsDialog
 import DataFolderUtil
 import numpy as np
@@ -15,6 +13,7 @@ import MathUtil
 import json
 from DataFrameModel import DataFrameModel
 import pandas as pd
+
 
 class InputTabWidget(QWidget):
     def __init__(self, window, ratioBuilder):
@@ -48,9 +47,9 @@ class InputTabWidget(QWidget):
         dirNameLabel = QLabel('&Directory path:')
         dirNameLabel.setBuddy(self.dirNameEdit)
         # Directory button
-        dirButton = QPushButton()
-        dirButton.setIcon(QFileIconProvider().icon(QFileIconProvider.Folder))
-        dirButton.clicked.connect(self.setDirectory)
+        self.dirButton = QPushButton()
+        self.dirButton.setIcon(QFileIconProvider().icon(QFileIconProvider.Folder))
+        self.dirButton.clicked.connect(self.setDirectory)
 
         # Run button
         runButton = QPushButton('Run')
@@ -182,7 +181,7 @@ class InputTabWidget(QWidget):
         layout = QGridLayout()
         layout.addWidget(dirNameLabel, 0, 0)
         layout.addWidget(self.dirNameEdit, 0, 1)
-        layout.addWidget(dirButton, 0, 2)
+        layout.addWidget(self.dirButton, 0, 2)
         layout.addWidget(runButton, 0, 3)
         layout.addWidget(constantsWidget, 1, 0, 1, 4)
         layout.addWidget(tablesLayoutWidget, 2, 0, 1, 4)
@@ -195,24 +194,23 @@ class InputTabWidget(QWidget):
         if not os.path.isdir(path):
             QMessageBox.critical(self, 'Not valid', '"{}" is not a valid directory.'.format(path), QMessageBox.Ok)
         else:
-            if QMessageBox.question(
+            if not DataFolderUtil.willFilesBeMoved(path) or QMessageBox.question(
                     self, 'Run', 'This will move files in "{}". Are you sure you want to proceed?'.format(path),
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.No) == QMessageBox.Yes:
 
-                self.window.runAnalysis(path)
+                self.window.calcRatios(path)
                 self.addRatios()
                 self.setFilesBox(path)
 
-    def setDirectory(self):
+    def setDirectory(self, path):
         path = str(QFileDialog.getExistingDirectory(self, 'Select data directory'))
         if not os.path.isdir(path):
             return
 
+        path = os.path.normpath(path)
         self.dirNameEdit.setText(path)
         self.filesList.clear()
-
-        self.ratioBuilder.set_path(path)
 
         self.setFilesBox(path)
 
@@ -283,7 +281,7 @@ class InputTabWidget(QWidget):
         self.uTailGraph = pg.PlotWidget()
 
         self.uTailGraph.setTitle('Tailing U-238')
-        self.uTailGraph.setXRange(228, 237.5)
+        self.uTailGraph.setXRange(228, 238)
         self.uTailGraph.setYRange(0, 400)
         self.uTailGraph.getPlotItem().showGrid(True, True, 0.1)
         self.uTailGraph.getPlotItem().showAxis('top')
@@ -393,6 +391,9 @@ class InputTabWidget(QWidget):
         self.setThGraphRange(99)
 
     def plot(self):
+        self.uTailGraph.clear()
+        self.thTailGraph.clear()
+
         # Plot U-238 Tailing
         xnew = np.linspace(228.5, 237.5, num=200)
         x_axis_tail_u = self.ratioBuilder.x_axis_tail_u
@@ -410,27 +411,6 @@ class InputTabWidget(QWidget):
         self.interp_th_tail = g_th232(xnew)
         self.thTailGraph.plot(xnew, self.interp_th_tail, pen=pg.mkPen(color=(150, 150, 150), style=Qt.DashLine))
         self.thTailGraph.plot(x_axis_tail_th, aats, symbol='o', pen=None)
-
-    ''' +-----------------------------+ '''
-    ''' |        Ratios-Code          | '''
-    ''' +-----------------------------+ '''
-
-    def initRatiosBox(self):
-        self.ratiosBox = QGroupBox('Ratios')
-
-        self.ratiosTable = QTableView()
-        self.ratiosTable.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
-        self.ratiosTable.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
-
-        layout = QGridLayout()
-        layout.addWidget(self.ratiosTable)
-
-        self.ratiosBox.setLayout(layout)
-
-    def addRatiosToTable(self, ratios):
-        model = DataFrameModel(ratios, DataFolderUtil.findStandardNumber(self.dirNameEdit.text()))
-        self.ratiosTable.setModel(model)
-        self.ratiosTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     def fillTailingTables(self):
         uTailData = pd.DataFrame(
@@ -454,3 +434,24 @@ class InputTabWidget(QWidget):
         factorsData = pd.DataFrame({'UhH+': self.ratioBuilder.UH_plus, 'ThH+': self.ratioBuilder.ThH_plus}, index=['Factors'])
         self.factorsTable.setModel(DataFrameModel(factorsData))
         self.factorsTable.resizeColumnsToContents()
+
+    ''' +-----------------------------+ '''
+    ''' |        Ratios-Code          | '''
+    ''' +-----------------------------+ '''
+
+    def initRatiosBox(self):
+        self.ratiosBox = QGroupBox('Ratios')
+
+        self.ratiosTable = QTableView()
+        self.ratiosTable.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
+        self.ratiosTable.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
+
+        layout = QGridLayout()
+        layout.addWidget(self.ratiosTable)
+
+        self.ratiosBox.setLayout(layout)
+
+    def addRatiosToTable(self, ratios):
+        model = DataFrameModel(ratios, DataFolderUtil.findStandardNumber(self.dirNameEdit.text()))
+        self.ratiosTable.setModel(model)
+        self.ratiosTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)

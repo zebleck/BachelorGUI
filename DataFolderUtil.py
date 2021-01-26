@@ -21,6 +21,17 @@ def getFiles(path):
 
     return files
 
+def willFilesBeMoved(path):
+    old_path = os.getcwd()
+    os.chdir(path)
+
+    if len(glob.glob('.\\*.exp')+glob.glob('.\\*blk*.exp')+glob.glob('.\\*yhasU.exp')+glob.glob('.\\*yhasTh.exp')+glob.glob('.\\*hf*.exp')) > 0:
+        os.chdir(old_path)
+        return True
+    else:
+        os.chdir(old_path)
+        return False
+
 def findStandardNumber(path):
     old_path = os.getcwd()
     os.chdir(path)

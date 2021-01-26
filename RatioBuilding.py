@@ -1,22 +1,16 @@
 import os
-import glob
-import shutil
 import pandas as pd
 import numpy as np
 from pandas import ExcelWriter
-from pandas import ExcelFile
 
 import scipy.interpolate
-
-import DataFolderUtil
 
 
 class RatioBuilder:
 
     def __init__(self):
         self.data_root_folder = None
-
-        self.cps = 62500000
+        self.ratios = None
 
     def set_path(self, path):
         self.data_root_folder = path
@@ -843,7 +837,7 @@ def outliertest(X):
     larger = np.mean(X) - 2 * np.std(X, ddof=1)
 
     for m in range(len(X)):
-        if ((X[m] > smaller) or (X[m] < larger)):
+        if (X[m] > smaller) or (X[m] < larger):
             X[m] = float('nan')
         else:
             X[m] = X[m]
@@ -851,7 +845,10 @@ def outliertest(X):
     X = X[~np.isnan(X)]
 
     errX = 2 * np.std(X, ddof=1) / np.sqrt(len(X))  # 2 sigma SE
-    meanX = np.median(X)  # mean
+
+    # TODO: CHANGE BACK TO MEDIAN
+
+    meanX = np.mean(X)  # mean
     errRelX = errX / meanX  # 2 sigma relative error
 
     return X, errX, meanX, errRelX
