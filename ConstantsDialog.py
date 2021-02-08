@@ -58,7 +58,6 @@ class ConstantsDialog(QDialog):
         self.chBlank230 = QLineEdit()
         self.chBlank230S = QLineEdit()
         self.spBlank230 = QLineEdit()
-        self.spBlank230S = QLineEdit()
         self.a230232_init = QLineEdit()
         self.a230232_init_err = QLineEdit()
         self.saveButton = QPushButton('Save')
@@ -112,8 +111,7 @@ class ConstantsDialog(QDialog):
         analysisLayout.addRow(QLabel('Blank 232 Standard (ng)'), self.blank232S)
         analysisLayout.addRow(QLabel('Ch. Bl. 230 Non-Standard (fg)'), self.chBlank230)
         analysisLayout.addRow(QLabel('Ch. Bl. 230 Standard (fg)'), self.chBlank230S)
-        analysisLayout.addRow(QLabel('Sp. Bl. 230 Non-Standard (fg/g)'), self.spBlank230)
-        analysisLayout.addRow(QLabel('SP. Bl. 230 Standard (fg/g)'), self.spBlank230S)
+        analysisLayout.addRow(QLabel('Sp. Bl. 230 (fg/g)'), self.spBlank230)
         analysisLayout.addRow(QLabel('A230Th232Th Init.'), self.a230232_init)
         analysisLayout.addRow(QLabel('A230Th232Th Init. Error (abs.)'), self.a230232_init_err)
 
@@ -168,7 +166,6 @@ class ConstantsDialog(QDialog):
             self.chBlank230.setText('0.0')
             self.chBlank230S.setText('0.0')
             self.spBlank230.setText('0.0')
-            self.spBlank230S.setText('0.0')
             self.a230232_init.setText('0.0')
             self.a230232_init_err.setText('0.0')
 
@@ -214,7 +211,6 @@ class ConstantsDialog(QDialog):
             self.chBlank230.setText(str(constants['ch_blank230']))
             self.chBlank230S.setText(str(constants['ch_blank230S']))
             self.spBlank230.setText(str(constants['sp_blank230']))
-            self.spBlank230S.setText(str(constants['sp_blank230S']))
             self.a230232_init.setText(str(constants['a230232_init']))
             self.a230232_init_err.setText(str(constants['a230232_init_err']))
 
@@ -263,7 +259,7 @@ class ConstantsDialog(QDialog):
         fileDict['tri233'] = float(self.tri233Edit.text())
         fileDict['tri229'] = float(self.tri229Edit.text())
         fileDict['blank234'] = float(self.blank234.text())
-        fileDict['blank234S'] = float(self.blank234.text())
+        fileDict['blank234S'] = float(self.blank234S.text())
         fileDict['blank238'] = float(self.blank238.text())
         fileDict['blank238S'] = float(self.blank238S.text())
         fileDict['blank232'] = float(self.blank232.text())
@@ -271,7 +267,6 @@ class ConstantsDialog(QDialog):
         fileDict['ch_blank230'] = float(self.chBlank230.text())
         fileDict['ch_blank230S'] = float(self.chBlank230S.text())
         fileDict['sp_blank230'] = float(self.spBlank230.text())
-        fileDict['sp_blank230S'] = float(self.spBlank230S.text())
         fileDict['a230232_init'] = float(self.a230232_init.text())
         fileDict['a230232_init_err'] = float(self.a230232_init_err.text())
 

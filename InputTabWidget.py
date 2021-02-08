@@ -83,7 +83,7 @@ class InputTabWidget(QWidget):
         tablesLayout = QGridLayout()
 
         customTable = QTableWidget()
-        customTable.setRowCount(4)
+        customTable.setRowCount(5)
         customTable.setColumnCount(2)
         blankItem = QTableWidgetItem('Blank (1/0)')
         blankItem.setFlags(Qt.ItemIsEditable)
@@ -93,44 +93,29 @@ class InputTabWidget(QWidget):
         yieldThItem.setFlags(Qt.ItemIsEditable)
         gainItem = QTableWidgetItem('Gain (13 Ohm)')
         gainItem.setFlags(Qt.ItemIsEditable)
+        halfMassItem = QTableWidgetItem('Tail shift (1/0)')
+        halfMassItem.setFlags(Qt.ItemIsEditable)
         customTable.setItem(0, 0, blankItem)
         customTable.setItem(1, 0, yieldUItem)
         customTable.setItem(2, 0, yieldThItem)
         customTable.setItem(3, 0, gainItem)
+        customTable.setItem(4, 0, halfMassItem)
         customTable.setItem(0, 1, QTableWidgetItem('1'))
         customTable.setItem(1, 1, QTableWidgetItem('1'))
         customTable.setItem(2, 1, QTableWidgetItem('1'))
         customTable.setItem(3, 1, QTableWidgetItem('1'))
+        customTable.setItem(4, 1, QTableWidgetItem('0'))
         customTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         customTable.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         customTable.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        customTable.horizontalHeader().setVisible(False)
+        customTable.verticalHeader().setVisible(False)
         self.customTable = customTable
 
         customBox = QGroupBox('Custom constants')
         customLayout = QGridLayout()
         customLayout.addWidget(customTable)
         customBox.setLayout(customLayout)
-
-        '''specificTable = QTableWidget()
-        specificTable.setRowCount(8)
-        specificTable.setColumnCount(2)
-        specificTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        specificTable.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-
-        # Specific constants buttons
-        newButton = QPushButton('New')
-        loadButton = QPushButton('Load')
-        setAsDefaultButton = QPushButton('Set as default')
-        saveButton = QPushButton('Save')
-
-        pecificBox = QGroupBox('Specific constants')
-        specificLayout = QGridLayout()
-        specificLayout.addWidget(specificTable, 0, 0, 4, 1)
-        specificLayout.addWidget(newButton, 0, 1)
-        specificLayout.addWidget(loadButton, 1, 1)
-        specificLayout.addWidget(setAsDefaultButton, 2, 1)
-        specificLayout.addWidget(saveButton, 3, 1)
-        specificBox.setLayout(specificLayout)'''
 
         # File stats overview
         filesBox = QGroupBox('File overview')
@@ -192,7 +177,7 @@ class InputTabWidget(QWidget):
     def runEvent(self):
         path = self.dirNameEdit.text()
         if not os.path.isdir(path):
-            QMessageBox.critical(self, 'Not valid', '"{}" is not a valid directory.'.format(path), QMessageBox.Ok)
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid directory.', QMessageBox.Ok)
         else:
             if not DataFolderUtil.willFilesBeMoved(path) or QMessageBox.question(
                     self, 'Run', 'This will move files in "{}". Are you sure you want to proceed?'.format(path),
@@ -263,6 +248,22 @@ class InputTabWidget(QWidget):
         with open(os.path.join(os.getcwd(), 'settings.settings'), 'w') as file:
             json.dump({'default_constants': self.constantsFileEdit.text()}, file, indent=4)
         self.defaultConstantsButton.setEnabled(False)
+
+    def get_specific_constants(self):
+        specific = {
+            'Blank': float(self.customTable.item(0, 1).text()),
+            'Yield_U': float(self.customTable.item(1, 1).text()),
+            'Yield_Th': float(self.customTable.item(2, 1).text()),
+            'Gain': float(self.customTable.item(3, 1).text()),
+            'Tail shift': float(self.customTable.item(4, 1).text())
+        }
+        return specific
+
+    def get_constants(self):
+        constants = {}
+        with open(self.constantsFileEdit.text(), 'r') as file:
+            constants = json.loads(file.read().replace('\n', ''))
+        return constants
 
     ''' +-----------------------------+ '''
     ''' |       Overview-Code         | '''
@@ -365,21 +366,6 @@ class InputTabWidget(QWidget):
         norm_value = value / 100 / 0.99
         self.thTailGraph.setYRange(0, MathUtil.interp(100, np.max(self.interp_th_tail), norm_value))
 
-    def get_specific_constants(self):
-        specific = {
-            'Blank': float(self.customTable.item(0, 1).text()),
-            'Yield_U': float(self.customTable.item(1, 1).text()),
-            'Yield_Th': float(self.customTable.item(2, 1).text()),
-            'Gain': float(self.customTable.item(3, 1).text())
-        }
-        return specific
-
-    def get_constants(self):
-        constants = {}
-        with open(self.constantsFileEdit.text(), 'r') as file:
-            constants = json.loads(file.read().replace('\n', ''))
-        return constants
-
     def addRatios(self):
         self.addRatiosToTable(self.ratioBuilder.ratios)
         self.fillTailingTables()
@@ -387,8 +373,8 @@ class InputTabWidget(QWidget):
         self.plot()
         self.u_ySlider.setEnabled(True)
         self.th_ySlider.setEnabled(True)
-        self.setUGraphRange(99)
-        self.setThGraphRange(99)
+        self.setUGraphRange(self.u_ySlider.value())
+        self.setThGraphRange(self.th_ySlider.value())
 
     def plot(self):
         self.uTailGraph.clear()

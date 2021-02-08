@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QGridLayout, QGroupBox, QLineEdit, QLabel, QPushButt
 from PyQt5 import QtGui
 import os
 from DataFrameModel import DataFrameModel
+from MetadataDialog import MetadataDialog
+
 
 class AnalysisTabWidget(QLabel):
     def __init__(self, window, ratioBuilder, analyzer):
@@ -11,6 +13,8 @@ class AnalysisTabWidget(QLabel):
 
         self.ratioBuilder = ratioBuilder
         self.analyzer = analyzer
+
+        self.currentRatiosFolder = None
 
         self.initSettingsBox()
         self.initResultsBox()
@@ -32,6 +36,10 @@ class AnalysisTabWidget(QLabel):
         self.metadataFileEdit = QLineEdit()
         self.loadFileButton = QPushButton('Load')
         self.loadFileButton.clicked.connect(self.setMetadataFile)
+        self.createButton = QPushButton('Create')
+        self.createButton.clicked.connect(self.createMetadata)
+        self.editButton = QPushButton('Edit')
+        self.editButton.clicked.connect(self.editMetadata)
         self.runAnalysisButton = QPushButton('Start Analysis')
         self.runAnalysisButton.clicked.connect(self.runEvent)
 
@@ -39,6 +47,8 @@ class AnalysisTabWidget(QLabel):
         layout.addWidget(QLabel('Metadata:'))
         layout.addWidget(self.metadataFileEdit)
         layout.addWidget(self.loadFileButton)
+        layout.addWidget(self.createButton)
+        layout.addWidget(self.editButton)
         layout.addWidget(self.runAnalysisButton)
 
         self.settingsBox.setLayout(layout)
@@ -54,16 +64,30 @@ class AnalysisTabWidget(QLabel):
         self.metadataFileEdit.setText(path)
 
     def searchMetadataFile(self, path):
+        self.currentRatiosFolder = path
         for entry in os.listdir(path):
             if os.path.isfile(os.path.join(path, entry)) and entry.endswith('.csv'):
                 self.metadataFileEdit.setText(os.path.normpath(os.path.join(path, entry)))
                 return
         self.metadataFileEdit.setText('')
 
+    def createMetadata(self):
+        dialog = MetadataDialog(self, folderPath=self.currentRatiosFolder)
+        dialog.exec_()
+
+    def editMetadata(self):
+        path = self.metadataFileEdit.text()
+        if not os.path.isfile(path) or not path.endswith('.csv'):
+            QMessageBox.critical(self, 'Not valid', '"{}" is not a valid metadata file (*.csv).'.format(path),
+                                 QMessageBox.Ok)
+            return
+        dialog = MetadataDialog(self, folderPath=self.currentRatiosFolder, filePath=path)
+        dialog.exec_()
+
     def runEvent(self):
         path = self.metadataFileEdit.text()
         if not os.path.isfile(path) or not path.endswith('.csv'):
-            QMessageBox.critical(self, 'Not valid', '"{}" is not a valid metadata file (*.csv).'.format(path), QMessageBox.Ok)
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv).'.format(path), QMessageBox.Ok)
         elif self.ratioBuilder.ratios is None:
             QMessageBox.critical(self, 'Not so fast!', 'Please run the ratio calculation first.', QMessageBox.Ok)
         else:

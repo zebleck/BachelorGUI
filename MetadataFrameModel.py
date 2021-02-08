@@ -3,15 +3,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 import pandas as pd
 
-class DataFrameModel(QtCore.QAbstractTableModel):
 
-    def __init__(self, data, standards=None, editable=True):
+class MetadataFrameModel(QtCore.QAbstractTableModel):
+
+    def __init__(self, data):
         QtCore.QAbstractTableModel.__init__(self)
         data.index.name = ''
-        data.reset_index(inplace=True)
         self._data = data
-        self.standards = standards
-        self.editable = editable
 
     def rowCount(self, parent=None):
         return self._data.shape[0]
@@ -23,24 +21,35 @@ class DataFrameModel(QtCore.QAbstractTableModel):
         if index.isValid():
             if role == Qt.DisplayRole:
                 try:
-                    return str(self._data.iloc[index.row(), index.column()])#'{:.4e}'.format(self._data.iloc[index.row(), index.column()])
+                    return str(self._data.iloc[index.row(), index.column()])  # '{:.4e}'.format(self._data.iloc[index.row(), index.column()])
                 except:
                     return str(self._data.iloc[index.row(), index.column()])
-            if role == Qt.FontRole and self._data[''][index.row()] == '':
-                font = QFont()
-                font.setBold(True)
-                return font
-            if role == Qt.TextAlignmentRole and self._data[''][index.row()] == '':
-                return Qt.AlignCenter
             if role == Qt.BackgroundRole:
-                if self.standards is not None:
-                    if self._data[''][index.row()] == '':
+                '''if self.standards is not None:
+                    if index.row() == 0:
                         return QtGui.QBrush(Qt.white)
                     elif self.standards in self._data[''][index.row()]:
-                        return QtGui.QBrush(QtGui.QColor(216, 228, 188))
+                        return QtGui.QBrush(QtGui.QColor(200, 255, 220))'''
                 return QtGui.QBrush(Qt.white)
 
         return None
+
+    def insertRows(self, row, count, index=QtCore.QModelIndex()):
+        self.beginInsertRows(index, row, count)
+        new_row = pd.DataFrame([[''] * len(self._data.columns)], columns=self._data.columns)
+        self._data = self._data.append(new_row, ignore_index=True)
+        self.endInsertRows()
+
+    def setData(self, index, value, role):
+        if role == Qt.EditRole:
+            self._data.iloc[index.row(), index.column()] = value
+            return True
+
+    def getData(self):
+        return self._data
+
+    def flags(self, index):  # Qt was imported from PyQt4.QtCore
+        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal:

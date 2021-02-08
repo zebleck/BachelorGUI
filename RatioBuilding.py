@@ -5,6 +5,8 @@ from pandas import ExcelWriter
 
 import scipy.interpolate
 
+import ExcelFormatter
+
 
 class RatioBuilder:
 
@@ -54,8 +56,10 @@ class RatioBuilder:
         self.yield_Th = specific_constants['Yield_Th']
         self.yield_U = specific_constants['Yield_U']
         self.gain = specific_constants['Gain']
+        self.tailShift = specific_constants['Tail shift']
 
-    def post_904IC(self, data, i, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat, R35_33,
+    def post_904IC(self, data, i, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
+                   R35_33,
                    tail_mat_th, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
                    mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
@@ -147,7 +151,8 @@ class RatioBuilder:
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
-    def post_90IC(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat, R35_33,
+    def post_90IC(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
+                  R35_33,
                   tail_mat_th, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
                   mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
@@ -167,7 +172,7 @@ class RatioBuilder:
 
         data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
         err_data36 = 2 * np.std(data36) / np.sqrt(len(data36))
-        abs_data36 = np.mean(data36);
+        abs_data36 = np.mean(data36)
 
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
         err_data38 = 2 * np.std(data38) / np.sqrt(len(data38))
@@ -239,8 +244,10 @@ class RatioBuilder:
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
-    def post_0IC(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat, R35_33,
-                 tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
+    def post_0IC(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
+                 R35_33,
+                 tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38,
+                 mf35,
                  mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
@@ -331,8 +338,10 @@ class RatioBuilder:
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
-    def post_allcup(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat, R35_33,
-                    tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
+    def post_allcup(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
+                    tail_mat, R35_33,
+                    tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92,
+                    mf38, mf35,
                     mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
@@ -423,15 +432,18 @@ class RatioBuilder:
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
     def yhas_uranium(self):
-        #xnew = np.linspace(228.5, 237.5, num=200)
+        # xnew = np.linspace(228.5, 237.5, num=200)
 
         old_path = os.getcwd()
         os.chdir(self.data_root_folder)
         listyu = os.listdir('yhas_u')
         namesyu = np.array(listyu)
 
-        x_axis_tail_u = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
-        x_axis_tail_u_cup = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing cup
+        if self.tailShift == 0:
+            x_axis_tail_u = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
+        elif self.tailShift == 1:
+            x_axis_tail_u = np.array([228, 233, 236, 236.2, 236.55, 237])  # half-masses tailing SEM/RPQ
+        # x_axis_tail_u_cup = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing cup
         os.chdir('yhas_u')
 
         for i in range(len(namesyu)):  # read yhas data
@@ -472,7 +484,6 @@ class RatioBuilder:
             uh = uh1 / (uh2 * self.cps)
             self.UH_plus = np.mean(uh[uh != 0])
 
-
             check = 0
             for m in range(len(dummyu)):
                 if dummyu[m] == 0:
@@ -484,6 +495,7 @@ class RatioBuilder:
 
         self.x_axis_tail_u = x_axis_tail_u
         self.aatsu = dummyu
+        print(self.aatsu)
 
         self.f_u238 = scipy.interpolate.PchipInterpolator(self.x_axis_tail_u, self.aatsu)
 
@@ -562,6 +574,10 @@ class RatioBuilder:
         rpq_factor_u = [164, 94, 46, 37, 18, 7, 5, 4]  # RPQon/RPQoff
 
         f_u238 = self.f_u238
+        # if self.tailShift == 1:
+        #    tail_mat = [f_u238(228.5), f_u238(229.5), f_u238(231.5), f_u238(232.5), f_u238(233.5), f_u238(234.5), f_u238(235.5),
+        #                f_u238(236.5)] / (self.yield_U * self.cps * self.u238tail)
+        # elif self.tailShift == 0:
         tail_mat = [f_u238(229), f_u238(230), f_u238(232), f_u238(233), f_u238(234), f_u238(235), f_u238(236),
                     f_u238(237)] / (self.yield_U * self.cps * self.u238tail)
 
@@ -586,7 +602,8 @@ class RatioBuilder:
         rpq_factor_th = [52, 10]  # RPQon/RPQoff
 
         g_th232 = self.g_th232
-        tail_mat_th = [g_th232(229), g_th232(230)] / (self.yield_Th * self.cps * self.th232tail)  # tailing Th-232 on SEM/RPQ
+        tail_mat_th = [g_th232(229), g_th232(230)] / (
+                    self.yield_Th * self.cps * self.th232tail)  # tailing Th-232 on SEM/RPQ
 
         if tail_mat_th[0] < 2e-9:  # empirically determined threshold for too low signals
             tail_mat_th[0] = 2e-9
@@ -683,7 +700,7 @@ class RatioBuilder:
                  'U-238': datablkm[:, 4], 'Th-230': datablkm[:, 5], 'Th-232': datablkm[:, 6], 'Th-229': datablkm[:, 7]},
                 index=names_blank)
             writer = ExcelWriter(self.data_root_folder + '\\PrBlank.xlsx', engine='xlsxwriter')
-            blank.to_excel(writer, 'Sheet1')
+            ExcelFormatter.format(writer, {'Sheet1': blank})
             writer.save()
 
         else:
@@ -693,7 +710,7 @@ class RatioBuilder:
                  'U-238': datablkm[:, 4], 'Th-230': datablkm[:, 5], 'Th-232': datablkm[:, 6], 'Th-229': datablkm[:, 7]},
                 index=names_blank)
             writer = ExcelWriter(self.data_root_folder + '\\PrBlank.xlsx', engine='xlsxwriter')
-            blank.to_excel(writer, 'Sheet1')
+            ExcelFormatter.format(writer, {'Sheet1': blank})
             writer.save()
 
         self.datablkm = datablkm
@@ -707,7 +724,7 @@ class RatioBuilder:
         list_data = os.listdir(folder_data)
         names_data = np.sort(np.array(list_data))
 
-        #standard = DataFolderUtil.findStandardNumber(self.data_root_folder)
+        # standard = DataFolderUtil.findStandardNumber(self.data_root_folder)
 
         peakstrhelp = 'Cycle'
 
@@ -756,29 +773,44 @@ class RatioBuilder:
 
             if len(c3) == 3:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
-                 errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35] = self.post_904IC(
-                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
-                    self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
-                    self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58, self.mf02)  # measurement method: 234, 230, and 229 on SEM/RPQ
+                 errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
+                 errRel35] = self.post_904IC(
+                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.datablkm, self.UH_plus, self.cps,
+                    self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
+                    self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36,
+                    self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
+                    self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
+                    self.mf02)  # measurement method: 234, 230, and 229 on SEM/RPQ
             elif len(c3) == 2:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
-                 errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35] = self.post_90IC(
-                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
-                    self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
-                    self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58, self.mf02)  # measurement method: 230 and 229 on SEM/RPQ
+                 errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
+                 errRel35] = self.post_90IC(
+                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus,
+                    self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
+                    self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36,
+                    self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
+                    self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
+                    self.mf02)  # measurement method: 230 and 229 on SEM/RPQ
             elif len(c3) == 1:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
-                 errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35] = self.post_0IC(
-                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
-                    self.tail_mat_th, self.tail_mat_th_cup, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
-                    self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58, self.mf02)  # measurement method: 230 on SEM/RPQ
+                 errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
+                 errRel35] = self.post_0IC(
+                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus,
+                    self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
+                    self.tail_mat_th, self.tail_mat_th_cup, self.R30_29, self.yield_Th, self.slope229Correction,
+                    self.mf48, self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
+                    self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
+                    self.mf02)  # measurement method: 230 on SEM/RPQ
             else:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
-                 errRel35] = self.post_allcup(data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33,
-                                         self.tail_mat, self.R35_33, self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48,
-                                         self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35, self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
-                                         self.mf02)  # measurement method: all isotopes on cup
+                 errRel35] = self.post_allcup(data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain,
+                                              self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33,
+                                              self.tail_mat, self.R35_33, self.tail_mat_th, self.R30_29, self.yield_Th,
+                                              self.slope229Correction, self.mf48,
+                                              self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
+                                              self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
+                                              self.mf02)  # measurement method: all isotopes on cup
 
             matrix_ratios[i, :] = [R36_, errRel36 * 100, R58u_, errRel58u * 100, R56_, errRel56 * 100, R43_,
                                    errRel43 * 100, R45_, errRel45 * 100, R48_, errRel48 * 100, R09_, errRel09 * 100,
@@ -790,7 +822,10 @@ class RatioBuilder:
 
         # os.remove(data_root_folder + '\\Ratios_python.xlsx')
 
-        datacorr = pd.DataFrame({'dU234': (matrix_ratios[:, 10] * self.lambda234/self.lambda238 - 1) * 1000, 'Error dU234 (abs.)': (matrix_ratios[:, 10] * self.lambda234/self.lambda238) * matrix_ratios[:, 11] / 100,
+        datacorr = pd.DataFrame({'dU234': (matrix_ratios[:, 10] * self.lambda234 / self.lambda238 - 1) * 1000,
+                                 'Error dU234 (abs.)': (matrix_ratios[:,
+                                                        10] * self.lambda234 / self.lambda238) * matrix_ratios[:,
+                                                                                                 11] / 100,
                                  'Ratio 233/236': matrix_ratios[:, 0], 'Error (%) 233/236': matrix_ratios[:, 1],
                                  'Ratio 235/238': matrix_ratios[:, 2], 'Error (%) 235/238': matrix_ratios[:, 3],
                                  'Ratio 235/236': matrix_ratios[:, 4], 'Error (%) 235/236': matrix_ratios[:, 5],
@@ -805,7 +840,7 @@ class RatioBuilder:
         self.ratios = datacorr
 
         writer = ExcelWriter(self.data_root_folder + '\\Ratios.xlsx', engine='xlsxwriter')
-        datacorr.to_excel(writer, 'Sheet1')
+        ExcelFormatter.format(writer, {'Ratios': datacorr})
         writer.save()
 
         # os.remove(data_root_folder + '\\Ratios_python_add.xlsx')
@@ -824,15 +859,15 @@ class RatioBuilder:
              'Ratio 233/235': matrix_ratios_add[:, 22], 'Error (%) 233/235': matrix_ratios_add[:, 23], },
             index=names_data)
         writer = ExcelWriter(self.data_root_folder + '\\Ratios_add.xlsx', engine='xlsxwriter')
-        datacorr_add.to_excel(writer, 'Sheet1')
+        ExcelFormatter.format(writer, {'Ratios': datacorr_add})
         writer.save()
 
         os.chdir(old_path)
 
         return datacorr
 
-def outliertest(X):
 
+def outliertest(X):
     smaller = np.mean(X) + 2 * np.std(X, ddof=1)
     larger = np.mean(X) - 2 * np.std(X, ddof=1)
 
