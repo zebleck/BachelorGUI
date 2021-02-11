@@ -45,7 +45,10 @@ class DataFrameModel(QtCore.QAbstractTableModel):
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return self._data.columns[col]
+                if 'Fehler' in self._data.columns[col]:
+                    return 'Fehler 2σ'
+                else:
+                    return self._data.columns[col]
             if role == Qt.FontRole:
                 font = QFont()
                 font.setBold(True)

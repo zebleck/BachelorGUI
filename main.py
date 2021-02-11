@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QTabWidget, QFileDialog
+from PyQt5.QtWidgets import QTabWidget, QFileDialog, QMessageBox
 from PyQt5.QtGui import QIcon
 import sys
 import os
@@ -17,7 +17,7 @@ class Window(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(Window, self).__init__()
-        self.setGeometry(50, 50, 800, 1000)
+        self.setGeometry(50, 50, 1200, 1000)
         self.setWindowTitle("U/Th Data Analysis")
         self.setWindowIcon(QIcon('logo/PUA_logo_HiRes.png'))
 
@@ -44,12 +44,17 @@ class Window(QtWidgets.QMainWindow):
         extractAction.setStatusTip('Open a file')
         extractAction.triggered.connect(self.inputTab.setDirectory)
 
-        # self.statusBar()
+        showHelpAction = QtWidgets.QAction('Nutzung', self)
+        showHelpAction.setStatusTip('Shows how to use the program')
+        showHelpAction.triggered.connect(self.showHelp)
+
 
         # menu
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
         fileMenu.addAction(extractAction)
+        helpMenu = mainMenu.addMenu('&Help')
+        helpMenu.addAction(showHelpAction)
 
     def setPaths(self, path):
         if not os.path.isdir(path):
@@ -77,6 +82,26 @@ class Window(QtWidgets.QMainWindow):
         self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
 
         self.analysisTab.display()
+
+    def showHelp(self):
+        helpBox = QMessageBox()
+        helpBox.setIcon(QMessageBox.Information)
+        helpBox.setWindowTitle('How to use')
+        helpBox.setText("Nutzung (Reihenfolge beachten):\n" +
+                        "1. Im Input-Tab den Datenordner auswählen.\n" +
+                        "2. Falls noch nicht vorhanden: Konstanten laden oder neu erstellen.\n" +
+                        "3. Falls nötig messungsspezifische Konstanten einstellen.\n"
+                        "4. Im Input-Tab auf \"Run\" klicken, um die Isotopenverhältnise zu berechnen.\n" +
+                        "    Im Datenordner sollten nun die Dateien \"PrBlank.xlsx\", \"Ratios.xlsx\" und\n" +
+                        "    \"Ratios_add.xlsx\" sein.\n" +
+                        "5. Im Analysis-Tab eine Metadaten-Datei laden oder neu erstellen.\n" +
+                        "6. Auf \"Start Analysis\" klicken.\n" +
+                        "7. Im Datenordner sollte nun die Datei \"Results.xlsx\" erstellt sein.\n"
+                        "\n" +
+                        "Falls es Probleme beim Einlesen der Daten gibt, bitte den Beispiel ordner\n" +
+                        "als Vorlage nehmen.\n" +
+                        "Bei weiteren Fragen oder Problemen bitte @fabi anschreiben auf Mattermost :)")
+        helpBox.exec_()
 
     def close_application(self):
         sys.exit()

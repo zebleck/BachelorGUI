@@ -442,7 +442,7 @@ class RatioBuilder:
         if self.tailShift == 0:
             x_axis_tail_u = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
         elif self.tailShift == 1:
-            x_axis_tail_u = np.array([228, 233, 236, 236.2, 236.55, 237])  # half-masses tailing SEM/RPQ
+            x_axis_tail_u = np.array([227.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
         # x_axis_tail_u_cup = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing cup
         os.chdir('yhas_u')
 
@@ -495,7 +495,7 @@ class RatioBuilder:
 
         self.x_axis_tail_u = x_axis_tail_u
         self.aatsu = dummyu
-        print(self.aatsu)
+        #print(self.aatsu)
 
         self.f_u238 = scipy.interpolate.PchipInterpolator(self.x_axis_tail_u, self.aatsu)
 
@@ -881,9 +881,7 @@ def outliertest(X):
 
     errX = 2 * np.std(X, ddof=1) / np.sqrt(len(X))  # 2 sigma SE
 
-    # TODO: CHANGE BACK TO MEDIAN
-
-    meanX = np.mean(X)  # mean
+    meanX = np.median(X)  # mean
     errRelX = errX / meanX  # 2 sigma relative error
 
     return X, errX, meanX, errRelX

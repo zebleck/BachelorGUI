@@ -78,7 +78,7 @@ class AnalysisTabWidget(QLabel):
     def editMetadata(self):
         path = self.metadataFileEdit.text()
         if not os.path.isfile(path) or not path.endswith('.csv'):
-            QMessageBox.critical(self, 'Not valid', '"{}" is not a valid metadata file (*.csv).'.format(path),
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv).',
                                  QMessageBox.Ok)
             return
         dialog = MetadataDialog(self, folderPath=self.currentRatiosFolder, filePath=path)
@@ -87,7 +87,7 @@ class AnalysisTabWidget(QLabel):
     def runEvent(self):
         path = self.metadataFileEdit.text()
         if not os.path.isfile(path) or not path.endswith('.csv'):
-            QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv).'.format(path), QMessageBox.Ok)
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv).', QMessageBox.Ok)
         elif self.ratioBuilder.ratios is None:
             QMessageBox.critical(self, 'Not so fast!', 'Please run the ratio calculation first.', QMessageBox.Ok)
         else:
