@@ -5,13 +5,14 @@ import pandas as pd
 
 class DataFrameModel(QtCore.QAbstractTableModel):
 
-    def __init__(self, data, standards=None, editable=True):
+    def __init__(self, data, standards=None, showIndex=True):
         QtCore.QAbstractTableModel.__init__(self)
         data.index.name = ''
-        data.reset_index(inplace=True)
+        self.index = data.index
+        if showIndex:
+            data.reset_index(inplace=True)
         self._data = data
         self.standards = standards
-        self.editable = editable
 
     def rowCount(self, parent=None):
         return self._data.shape[0]
@@ -26,17 +27,17 @@ class DataFrameModel(QtCore.QAbstractTableModel):
                     return str(self._data.iloc[index.row(), index.column()])#'{:.4e}'.format(self._data.iloc[index.row(), index.column()])
                 except:
                     return str(self._data.iloc[index.row(), index.column()])
-            if role == Qt.FontRole and self._data[''][index.row()] == '':
+            if role == Qt.FontRole and self.index[index.row()] == '':
                 font = QFont()
                 font.setBold(True)
                 return font
-            if role == Qt.TextAlignmentRole and self._data[''][index.row()] == '':
+            if role == Qt.TextAlignmentRole and self.index[index.row()] == '':
                 return Qt.AlignCenter
             if role == Qt.BackgroundRole:
                 if self.standards is not None:
-                    if self._data[''][index.row()] == '':
+                    if self.index[index.row()] == '':
                         return QtGui.QBrush(Qt.white)
-                    elif self.standards in self._data[''][index.row()]:
+                    elif self.standards in self.index[index.row()]:
                         return QtGui.QBrush(QtGui.QColor(216, 228, 188))
                 return QtGui.QBrush(Qt.white)
 

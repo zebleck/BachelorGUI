@@ -80,8 +80,8 @@ class Window(QtWidgets.QMainWindow):
         self.analyzer.set_metadata(metadatapath)
 
         self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
-
         self.analysisTab.display()
+
 
     def showHelp(self):
         helpBox = QMessageBox()

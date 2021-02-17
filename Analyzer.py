@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 
+import openpyxl
 from pandas import ExcelWriter
 
 import DataFolderUtil
@@ -70,6 +71,11 @@ class Analyzer:
         self.a230232_init = constants['a230232_init']
         self.a230232_init_err = constants['a230232_init_err']
 
+        self.standardBezeich = constants['standardBezeich']
+        self.standardEinwaage = constants['standardEinwaage']
+        self.standardTriSp13 = constants['standardTriSp13']
+
+
     def set_specific_constants(self, specific_constants):
         self.blk = specific_constants['Blank']
         self.yield_Th = specific_constants['Yield_Th']
@@ -78,12 +84,71 @@ class Analyzer:
         self.tailShift = specific_constants['Tail shift']
 
     def set_metadata(self, metadata_path):
-        self.metadata = pd.read_csv(metadata_path, sep=';', na_filter=False)
+        standardInFile = False
+
+        if metadata_path.endswith('.csv'):
+            self.metadata = pd.read_csv(metadata_path, sep=';', na_filter=False)
+            self.metadata['Tiefe'] = self.metadata.pop('Tiefe (cm)')
+            self.tiefe_unit = 'cm'
+
+            if int(self.standard) in list(self.metadata['Lab. #']):
+                standardInFile = True
+
+        elif metadata_path.endswith('.xlsx'):
+            # pd.read_excel() throws an error when using in .exe
+            metadata = pd.read_excel(metadata_path, sheet_name='Ergebnisse', na_filter=False, engine='openpyxl')
+
+            rows = []
+            metadata_dict = {'Lab. #': [], 'Bezeich.': [], 'Art der Probe': [], 'Mess. Dat.': [], 'Tiefe': [],
+                             'Einwaage (g)': [], 'TriSp13 (g)': []}
+
+            for idx, row in metadata.iterrows():
+                if idx == 0:
+                    if 'cm' in metadata.iloc[idx, 4]:
+                        self.tiefe_unit = 'cm'
+                    elif 'mm' in metadata.iloc[idx, 4]:
+                        self.tiefe_unit = 'mm'
+                try:
+                    labnr = int(metadata.iloc[idx, 0])
+                    if labnr == int(self.standard):
+                        standardInFile = True
+                    metadata_dict['Lab. #'].append(labnr)
+                    metadata_dict['Bezeich.'].append(metadata.iloc[idx, 1])
+                    metadata_dict['Art der Probe'].append(metadata.iloc[idx, 2])
+                    metadata_dict['Mess. Dat.'].append(metadata.iloc[idx, 3])
+                    metadata_dict['Tiefe'].append(metadata.iloc[idx, 4])
+                    metadata_dict['Einwaage (g)'].append(metadata.iloc[idx, 5])
+                    metadata_dict['TriSp13 (g)'].append(metadata.iloc[idx, 6])
+                except:
+                    pass
+
+            self.metadata = pd.DataFrame(metadata_dict)
+
+        # prevents wrong date format in results file
+        try:
+            self.metadata['Mess. Dat.'] = self.metadata['Mess. Dat.'].dt.strftime('%d.%m.%Y')
+        except:
+            pass
+
+        # fixes standard name in "Art der Probe"
+        for i in range(len(self.metadata.index)):
+            if self.metadata['Art der Probe'][i] == 'St.':
+                self.metadata['Art der Probe'][i] = 'Standard'
+
+        if not standardInFile:
+            standardRow = pd.DataFrame(
+                {'Lab. #': [int(self.standard)], 'Bezeich.': [self.standardBezeich], 'Art der Probe': ['Standard'],
+                 'Mess. Dat.': [''], 'Tiefe': [''],
+                 'Einwaage (g)': [self.standardEinwaage], 'TriSp13 (g)': [self.standardTriSp13]})
+            for i in range(len(self.metadata)):
+                self.metadata = pd.concat([self.metadata.iloc[:2*i], standardRow, self.metadata.iloc[2*i:]], ignore_index=True)
+            self.metadata = pd.concat([self.metadata, standardRow], ignore_index=True)
 
         blank234 = [self.blank234S if desc == 'Standard' else self.blank234 for desc in self.metadata['Art der Probe']]
         blank238 = [self.blank238S if desc == 'Standard' else self.blank238 for desc in self.metadata['Art der Probe']]
         blank232 = [self.blank232S if desc == 'Standard' else self.blank232 for desc in self.metadata['Art der Probe']]
-        chBlank230 = [self.chBlank230S if desc == 'Standard' else self.chBlank230 for desc in self.metadata['Art der Probe']]
+        chBlank230 = [self.chBlank230S if desc == 'Standard' else self.chBlank230 for desc in
+                      self.metadata['Art der Probe']]
         spBlank230 = [self.spBlank230 for desc in self.metadata['Art der Probe']]
 
         self.blanks = pd.DataFrame({'Blank 234 (fg)': blank234,
@@ -261,7 +326,7 @@ class Analyzer:
             '(230Th/232Th)': self.a230232_init, 'Fehler21': self.a230232_init_err,
             'Cheng korr.': age_corr, 'Fehler22': age_corr_err, 'Fehler23': age_corr_taylor,
             'Fehler24': age_corr_rel_err,
-            'Bezeichnung': list(self.metadata['Bezeich.']), 'Tiefe': self.metadata['Tiefe (cm)'],
+            'Bezeichnung': list(self.metadata['Bezeich.']), 'Tiefe': self.metadata['Tiefe'],
             'd234U (initial)': d234U_init, 'Fehler25': d234U_init_err,
             'Cheng korr': cheng_corr, 'Fehler 1σ': taylor_err_one_sig, '2sig/t': two_sig_t
         })
@@ -274,7 +339,7 @@ class Analyzer:
                       '(dpmg/g)', '(abso.)', '', '(abso.)', '(o/oo)', '(abso.) o/oo',
                       'Akt. Ver.', '(abso.)', 'Akt.Ver.', '(abso.)', '(ka)', '(ka)', '(%)',
                       'Akt. Ver.', '(abso.)', 'Akt. Ver. initial', '(abso.)', '(ka)', '(ka)',
-                      'Taylor 1. Ord.', '(%)', '', '(cm)', '(o/oo)', '(abso.) o/oo',
+                      'Taylor 1. Ord.', '(%)', '', self.tiefe_unit, '(o/oo)', '(abso.) o/oo',
                       '(a BP)', '(a)', '(%)']
 
         #print(list(self.calc.columns), len(list(self.calc.columns)))
@@ -296,7 +361,7 @@ class Analyzer:
             'Alter (unkorr.)': list(age_uncorr), 'Fehler6': list(age_uncorr_err),
             'Alter (korr.)': list(age_corr), 'Fehler7': list(age_corr_err),
             'd234U (initial)': list(d234U), 'Fehler8': list(d234U_err),
-            'Tiefe': list(self.metadata['Tiefe (cm)'])
+            'Tiefe': list(self.metadata['Tiefe'])
         },
             index=ratios.iloc[:, 0])
 
@@ -309,7 +374,7 @@ class Analyzer:
                                       'Alter (unkorr.)': '(ka)', 'Fehler6': '(ka)',
                                       'Alter (korr.)': '(ka)', 'Fehler7': '(ka)',
                                       'd234U (initial)': '(o/oo)', 'Fehler8': '(abso.) (o/oo)',
-                                      'Tiefe': '(cm)'}, index=[''])
+                                      'Tiefe': self.tiefe_unit}, index=[''])
 
         self.results = pd.concat([self.results.iloc[:0], results_units, self.results[0:]])
 

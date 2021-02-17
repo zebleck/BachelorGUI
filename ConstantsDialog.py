@@ -60,6 +60,9 @@ class ConstantsDialog(QDialog):
         self.spBlank230 = QLineEdit()
         self.a230232_init = QLineEdit()
         self.a230232_init_err = QLineEdit()
+        self.standardBezeich = QLineEdit()
+        self.standardEinwaage = QLineEdit()
+        self.standardTriSp13 = QLineEdit()
         self.saveButton = QPushButton('Save')
         self.saveButton.clicked.connect(self.save)
 
@@ -114,6 +117,12 @@ class ConstantsDialog(QDialog):
         analysisLayout.addRow(QLabel('Sp. Bl. 230 (fg/g)'), self.spBlank230)
         analysisLayout.addRow(QLabel('A230Th232Th Init.'), self.a230232_init)
         analysisLayout.addRow(QLabel('A230Th232Th Init. Error (abs.)'), self.a230232_init_err)
+        standardLabel = QLabel('Standard')
+        standardLabel.setFont(font)
+        analysisLayout.addRow(standardLabel)
+        analysisLayout.addRow(QLabel('Bezeich.'), self.standardBezeich)
+        analysisLayout.addRow(QLabel('Einwaage (g)'), self.standardEinwaage)
+        analysisLayout.addRow(QLabel('TriSp13 (g)'), self.standardTriSp13)
 
         layout = QFormLayout()
         ratiosWidget = QWidget()
@@ -168,6 +177,8 @@ class ConstantsDialog(QDialog):
             self.spBlank230.setText('0.0')
             self.a230232_init.setText('0.0')
             self.a230232_init_err.setText('0.0')
+            self.standardEinwaage.setText('0.0')
+            self.standardTriSp13.setText('0.0')
 
         else:
             constants = {}
@@ -213,6 +224,9 @@ class ConstantsDialog(QDialog):
             self.spBlank230.setText(str(constants['sp_blank230']))
             self.a230232_init.setText(str(constants['a230232_init']))
             self.a230232_init_err.setText(str(constants['a230232_init_err']))
+            self.standardBezeich.setText(constants['standardBezeich'])
+            self.standardEinwaage.setText(str(constants['standardEinwaage']))
+            self.standardTriSp13.setText(str(constants['standardTriSp13']))
 
     def save(self):
         fileName = None
@@ -269,6 +283,9 @@ class ConstantsDialog(QDialog):
         fileDict['sp_blank230'] = float(self.spBlank230.text())
         fileDict['a230232_init'] = float(self.a230232_init.text())
         fileDict['a230232_init_err'] = float(self.a230232_init_err.text())
+        fileDict['standardBezeich'] = self.standardBezeich.text()
+        fileDict['standardEinwaage'] = float(self.standardEinwaage.text())
+        fileDict['standardTriSp13'] = float(self.standardTriSp13.text())
 
         with open(fileName, 'w') as file:
             json.dump(fileDict, file, indent=4)

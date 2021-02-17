@@ -178,6 +178,8 @@ class InputTabWidget(QWidget):
         path = self.dirNameEdit.text()
         if not os.path.isdir(path):
             QMessageBox.critical(self, 'Not valid', 'Please select a valid directory.', QMessageBox.Ok)
+        elif not os.path.isfile(self.constantsFileEdit.text()) or not self.constantsFileEdit.text().endswith('.cfg'):
+            QMessageBox.critical(self, 'Not valid', 'Please load the constants first.', QMessageBox.Ok)
         else:
             if not DataFolderUtil.willFilesBeMoved(path) or QMessageBox.question(
                     self, 'Run', 'This will move files in "{}". Are you sure you want to proceed?'.format(path),

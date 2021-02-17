@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QGridLayout, QGroupBox, QLineEdit, QLabel, QPushButton, \
-    QMessageBox, QHBoxLayout, QFileDialog, QTableView, QHeaderView
+    QMessageBox, QHBoxLayout, QFileDialog, QTableView, QHeaderView, QCheckBox, QWidget
 from PyQt5 import QtGui
 import os
 from DataFrameModel import DataFrameModel
 from MetadataDialog import MetadataDialog
+import pandas as pd
 
 
 class AnalysisTabWidget(QLabel):
@@ -43,20 +44,25 @@ class AnalysisTabWidget(QLabel):
         self.runAnalysisButton = QPushButton('Start Analysis')
         self.runAnalysisButton.clicked.connect(self.runEvent)
 
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel('Metadata:'))
-        layout.addWidget(self.metadataFileEdit)
-        layout.addWidget(self.loadFileButton)
-        layout.addWidget(self.createButton)
-        layout.addWidget(self.editButton)
-        layout.addWidget(self.runAnalysisButton)
+        topLayout = QHBoxLayout()
+        topLayout.addWidget(QLabel('Metadata:'))
+        topLayout.addWidget(self.metadataFileEdit)
+        topLayout.addWidget(self.loadFileButton)
+        topLayout.addWidget(self.createButton)
+        topLayout.addWidget(self.editButton)
+        topLayout.addWidget(self.runAnalysisButton)
+        topLayoutWidget = QWidget()
+        topLayoutWidget.setLayout(topLayout)
+
+        layout = QGridLayout()
+        layout.addWidget(topLayoutWidget, 0, 0)
 
         self.settingsBox.setLayout(layout)
 
     def setMetadataFile(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        path, _ = QFileDialog.getOpenFileName(self, 'Select metadata file', "", "Metadata file (*.csv)", options=options)
+        path, _ = QFileDialog.getOpenFileName(self, 'Select metadata file', "", "Metadata/Wägeprotokolle (*.csv *.xlsx)", options=options)
 
         if not os.path.isfile(path):
             return
@@ -66,8 +72,12 @@ class AnalysisTabWidget(QLabel):
     def searchMetadataFile(self, path):
         self.currentRatiosFolder = path
         for entry in os.listdir(path):
-            if os.path.isfile(os.path.join(path, entry)) and entry.endswith('.csv'):
-                self.metadataFileEdit.setText(os.path.normpath(os.path.join(path, entry)))
+            entrypath = os.path.join(path, entry)
+            if os.path.isfile(entrypath) and entry.endswith('.csv'):
+                self.metadataFileEdit.setText(os.path.normpath(entrypath))
+                return
+            elif os.path.isfile(entrypath) and entry.endswith('.xlsx') and 'Wägeprotokoll' in entry:
+                self.metadataFileEdit.setText(os.path.normpath(entrypath))
                 return
         self.metadataFileEdit.setText('')
 
@@ -77,7 +87,10 @@ class AnalysisTabWidget(QLabel):
 
     def editMetadata(self):
         path = self.metadataFileEdit.text()
-        if not os.path.isfile(path) or not path.endswith('.csv'):
+        if os.path.isfile(path) and path.endswith('.xlsx'):
+            QMessageBox.critical(self, 'Not valid', 'Can only edit .csv metadata files.')
+            return
+        elif not os.path.isfile(path) or not path.endswith('.csv'):
             QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv).',
                                  QMessageBox.Ok)
             return
@@ -86,8 +99,8 @@ class AnalysisTabWidget(QLabel):
 
     def runEvent(self):
         path = self.metadataFileEdit.text()
-        if not os.path.isfile(path) or not path.endswith('.csv'):
-            QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv).', QMessageBox.Ok)
+        if not os.path.isfile(path) or (not path.endswith('.csv') and not path.endswith('.xlsx')):
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid metadata file (*.csv or *.xlsx).', QMessageBox.Ok)
         elif self.ratioBuilder.ratios is None:
             QMessageBox.critical(self, 'Not so fast!', 'Please run the ratio calculation first.', QMessageBox.Ok)
         else:
@@ -112,5 +125,5 @@ class AnalysisTabWidget(QLabel):
         self.resultsBox.setLayout(layout)
 
     def display(self):
-        self.resultTable.setModel(DataFrameModel(self.analyzer.results, self.analyzer.standard))
+        self.resultTable.setModel(DataFrameModel(self.analyzer.results, self.analyzer.standard, showIndex=False))
         self.resultTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
