@@ -209,10 +209,7 @@ class Analyzer:
         # a230232
         a230232 = th230dpmg / th232dpmg
         a230232_err = a230232 * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (th232ngg_err / th232ngg) ** 2)
-        a230232_corr = [a230232[i] * 2 / (a230232[i - 1] + a230232[i + 1])
-                        if (0 < i < len(a230232) - 1 and self.standard not in ratios.iloc[i, 0]) else a230232[i] for i
-                        in range(len(a230232))]
-        a230232_corr_err = a230232_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (th232dpmg_err / th232dpmg) ** 2)
+
 
         # a230238
         a230238 = th230dpmg / u238dpmg
@@ -238,6 +235,7 @@ class Analyzer:
 
         age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
                     range(len(a230238_corr))]
+        print('age_corr', age_corr)
         age_corr_err = [self.marincorr_age_error(a230238_corr[i],
                                                  a230238_corr_err[i],
                                                  a234238_corr[i],
@@ -356,7 +354,7 @@ class Analyzer:
             '238U': list(u238mugg), 'Fehler1': list(u238mugg_err),
             '232Th': list(th232ngg), 'Fehler2': list(th232ngg_err),
             '230Th/238U': list(a230238_corr), 'Fehler3': list(a230238_corr_err),
-            '230Th/232Th': list(a230232_corr), 'Fehler4': list(a230232_corr_err),
+            '230Th/232Th': list(a230232), 'Fehler4': list(a230232_err),
             'd234U korr': list(d234U), 'Fehler5': list(d234U_err),
             'Alter (unkorr.)': list(age_uncorr), 'Fehler6': list(age_uncorr_err),
             'Alter (korr.)': list(age_corr), 'Fehler7': list(age_corr_err),
@@ -636,6 +634,14 @@ class Analyzer:
     # AO = a230238_corr_err)
     def taylor_err(self, au, aw, aj, as_, at, av, t, ao):
 
+        print('au', au)
+        print('aw', aw)
+        print('aj', aj)
+        print('as', as_)
+        print('at', at)
+        print('av', av)
+        print('t', t)
+        print('ao', ao)
         if aw == 'Out of range':
             return '/'
         else:
