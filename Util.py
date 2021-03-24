@@ -1,5 +1,4 @@
-import pandas as pd
-
+import ntpath
 
 def get_standard_number(df):
     data = []
@@ -10,3 +9,7 @@ def get_standard_number(df):
     else:
         return None
     return max(set(data), key=data.count)
+
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)

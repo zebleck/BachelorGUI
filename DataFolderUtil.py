@@ -32,6 +32,17 @@ def willFilesBeMoved(path):
         os.chdir(old_path)
         return False
 
+def willFilesBeDeleted(path):
+    old_path = os.getcwd()
+    os.chdir(path)
+
+    if len(glob.glob('.\\*.TDT')+glob.glob('.\\*.dat')+glob.glob('.\\*.log')+glob.glob('.\\*.ini')+glob.glob('.\\*.TXT')) > 0:
+        os.chdir(old_path)
+        return True
+    else:
+        os.chdir(old_path)
+        return False
+
 def findStandardNumber(path):
     old_path = os.getcwd()
     os.chdir(path)
@@ -78,3 +89,35 @@ def createDataFolders(path):
         shutil.move(d, 'data')
 
     os.chdir(old_path)
+
+def removeUnnecessaryFiles(path):
+    old_path = os.getcwd()
+    os.chdir(path)
+
+    files = glob.glob('.\\*.TDT')+glob.glob('.\\*.dat')+glob.glob('.\\*.log')+glob.glob('.\\*.ini')+glob.glob('.\\*.TXT')
+    for file in files:
+        os.remove(file)
+
+    os.chdir(old_path)
+
+'''
+    used for debugging
+    specifically investigation of uncorrected age being lower than corrected age in some cases
+'''
+
+def writeList(path, filename, list):
+    with open(os.path.join(path, filename), 'w') as file:
+        for list_count, sub_list in enumerate(list):
+            for i, item in enumerate(sub_list):
+                file.write('{}'.format(item))
+                if i < len(sub_list)-1:
+                    file.write(',')
+            if list_count < len(list)-1:
+                file.write('\n')
+        file.close()
+
+def writeLineByLine(path, filename, list):
+    with open(os.path.join(path, filename), 'w') as file:
+        for element in list:
+            file.write('{}\n'.format(element))
+        file.close()

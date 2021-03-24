@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import re
 
 import openpyxl
 from pandas import ExcelWriter
@@ -17,9 +18,11 @@ class Analyzer:
 
     def set_path(self, path):
         self.data_root_folder = path
-        self.standard = DataFolderUtil.findStandardNumber(path)
+        self.standard = int(DataFolderUtil.findStandardNumber(path))
 
     def set_constants(self, constants):
+        self.constantsType = constants['type']
+
         # spike impurities
         self.R34_33 = constants['R3433']
         self.R35_33 = constants['R3533']
@@ -66,7 +69,6 @@ class Analyzer:
 
         self.chBlank230 = constants['ch_blank230']
         self.chBlank230S = constants['ch_blank230S']
-        self.spBlank230 = constants['sp_blank230']
 
         self.a230232_init = constants['a230232_init']
         self.a230232_init_err = constants['a230232_init_err']
@@ -83,87 +85,132 @@ class Analyzer:
         self.gain = specific_constants['Gain']
         self.tailShift = specific_constants['Tail shift']
 
-    def set_metadata(self, metadata_path):
-        standardInFile = False
+    def set_metadata(self, metadata_path, ratios):
+        standardRow = None
 
+        '''
+         build up full metadata file, either from .csv or .xlsx files
+        '''
         if metadata_path.endswith('.csv'):
-            self.metadata = pd.read_csv(metadata_path, sep=';', na_filter=False)
-            self.metadata['Tiefe'] = self.metadata.pop('Tiefe (cm)')
+            fullMetadata = pd.read_csv(metadata_path, sep=';', na_filter=False)
+            fullMetadata['Tiefe'] = fullMetadata.pop('Tiefe (cm)')
             self.tiefe_unit = 'cm'
-
-            if int(self.standard) in list(self.metadata['Lab. #']):
-                standardInFile = True
 
         elif metadata_path.endswith('.xlsx'):
             # pd.read_excel() throws an error when using in .exe
-            metadata = pd.read_excel(metadata_path, sheet_name='Ergebnisse', na_filter=False, engine='openpyxl')
+            fullMetadata = pd.read_excel(metadata_path, sheet_name='Ergebnisse', na_filter=False, engine='openpyxl')
 
-            rows = []
             metadata_dict = {'Lab. #': [], 'Bezeich.': [], 'Art der Probe': [], 'Mess. Dat.': [], 'Tiefe': [],
                              'Einwaage (g)': [], 'TriSp13 (g)': []}
 
-            for idx, row in metadata.iterrows():
+            for idx, row in fullMetadata.iterrows():
                 if idx == 0:
-                    if 'cm' in metadata.iloc[idx, 4]:
+                    if 'cm' in fullMetadata.iloc[idx, 4]:
                         self.tiefe_unit = 'cm'
-                    elif 'mm' in metadata.iloc[idx, 4]:
+                    elif 'mm' in fullMetadata.iloc[idx, 4]:
                         self.tiefe_unit = 'mm'
                 try:
-                    labnr = int(metadata.iloc[idx, 0])
-                    if labnr == int(self.standard):
-                        standardInFile = True
+                    labnr = int(fullMetadata.iloc[idx, 0])
                     metadata_dict['Lab. #'].append(labnr)
-                    metadata_dict['Bezeich.'].append(metadata.iloc[idx, 1])
-                    metadata_dict['Art der Probe'].append(metadata.iloc[idx, 2])
-                    metadata_dict['Mess. Dat.'].append(metadata.iloc[idx, 3])
-                    metadata_dict['Tiefe'].append(metadata.iloc[idx, 4])
-                    metadata_dict['Einwaage (g)'].append(metadata.iloc[idx, 5])
-                    metadata_dict['TriSp13 (g)'].append(metadata.iloc[idx, 6])
+                    metadata_dict['Bezeich.'].append(fullMetadata.iloc[idx, 1])
+                    metadata_dict['Art der Probe'].append(fullMetadata.iloc[idx, 2])
+                    metadata_dict['Mess. Dat.'].append(fullMetadata.iloc[idx, 3])
+                    metadata_dict['Tiefe'].append(fullMetadata.iloc[idx, 4])
+                    metadata_dict['Einwaage (g)'].append(fullMetadata.iloc[idx, 5])
+                    metadata_dict['TriSp13 (g)'].append(fullMetadata.iloc[idx, 6])
                 except:
                     pass
 
-            self.metadata = pd.DataFrame(metadata_dict)
+            fullMetadata = pd.DataFrame(metadata_dict)
 
         # prevents wrong date format in results file
         try:
-            self.metadata['Mess. Dat.'] = self.metadata['Mess. Dat.'].dt.strftime('%d.%m.%Y')
+            fullMetadata['Mess. Dat.'] = fullMetadata['Mess. Dat.'].dt.strftime('%d.%m.%Y')
         except:
             pass
 
         # fixes standard name in "Art der Probe"
-        for i in range(len(self.metadata.index)):
-            if self.metadata['Art der Probe'][i] == 'St.':
-                self.metadata['Art der Probe'][i] = 'Standard'
+        for i in range(len(fullMetadata.index)):
+            if fullMetadata['Art der Probe'][i] == 'St.':
+                fullMetadata['Art der Probe'][i] = 'Standard'
 
-        if not standardInFile:
+        if self.standard in list(fullMetadata['Lab. #']):
+            standardRow = fullMetadata[fullMetadata['Lab. #'] == self.standard]
+        else:
             standardRow = pd.DataFrame(
-                {'Lab. #': [int(self.standard)], 'Bezeich.': [self.standardBezeich], 'Art der Probe': ['Standard'],
+                {'Lab. #': [self.standard], 'Bezeich.': [self.standardBezeich], 'Art der Probe': ['Standard'],
                  'Mess. Dat.': [''], 'Tiefe': [''],
                  'Einwaage (g)': [self.standardEinwaage], 'TriSp13 (g)': [self.standardTriSp13]})
-            for i in range(len(self.metadata)):
-                self.metadata = pd.concat([self.metadata.iloc[:2*i], standardRow, self.metadata.iloc[2*i:]], ignore_index=True)
-            self.metadata = pd.concat([self.metadata, standardRow], ignore_index=True)
+
+
+        # get all valid laboratory numbers from the ratios dataframe (from the datafiles)
+        measurementLabNrs = re.split(r'\d+(?!\.)\D{1}', ''.join(list(ratios.iloc[:,0])))[1:]
+        for i, nr in enumerate(measurementLabNrs):
+            if '.exp' in nr:
+                measurementLabNrs[i] = int(nr.replace('.exp', ''))
+
+        if measurementLabNrs[-1] != self.standard:
+            measurementLabNrs.append(self.standard)
+
+
+        '''
+         build up measurement specific metadata dataframe
+        '''
+        metadata_dict = {
+            'Lab. #': [], 'Bezeich.': [], 'Art der Probe': [], 'Mess. Dat.': [], 'Tiefe': [],
+            'Einwaage (g)': [], 'TriSp13 (g)': []
+        }
+
+        #print(fullMetadata)
+        for labnr in measurementLabNrs:
+            if labnr == self.standard:
+                metadata_dict['Lab. #'].append(labnr)
+                metadata_dict['Bezeich.'].append(standardRow.iloc[0]['Bezeich.'])
+                metadata_dict['Art der Probe'].append(standardRow.iloc[0]['Art der Probe'])
+                metadata_dict['Mess. Dat.'].append(standardRow.iloc[0]['Mess. Dat.'])
+                metadata_dict['Tiefe'].append(standardRow.iloc[0]['Tiefe'])
+                metadata_dict['Einwaage (g)'].append(standardRow.iloc[0]['Einwaage (g)'])
+                metadata_dict['TriSp13 (g)'].append(standardRow.iloc[0]['TriSp13 (g)'])
+            else:
+                labnr_row = fullMetadata[fullMetadata['Lab. #'] == labnr]
+                metadata_dict['Lab. #'].append(labnr)
+                metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
+                metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
+                metadata_dict['Mess. Dat.'].append(labnr_row.iloc[0]['Mess. Dat.'])
+                metadata_dict['Tiefe'].append(labnr_row.iloc[0]['Tiefe'])
+                metadata_dict['Einwaage (g)'].append(labnr_row.iloc[0]['Einwaage (g)'])
+                metadata_dict['TriSp13 (g)'].append(labnr_row.iloc[0]['TriSp13 (g)'])
+
+        self.metadata = pd.DataFrame(metadata_dict)
+
+        # Set blanks
 
         blank234 = [self.blank234S if desc == 'Standard' else self.blank234 for desc in self.metadata['Art der Probe']]
         blank238 = [self.blank238S if desc == 'Standard' else self.blank238 for desc in self.metadata['Art der Probe']]
         blank232 = [self.blank232S if desc == 'Standard' else self.blank232 for desc in self.metadata['Art der Probe']]
         chBlank230 = [self.chBlank230S if desc == 'Standard' else self.chBlank230 for desc in
                       self.metadata['Art der Probe']]
-        spBlank230 = [self.spBlank230 for desc in self.metadata['Art der Probe']]
 
         self.blanks = pd.DataFrame({'Blank 234 (fg)': blank234,
                                     'Blank 238 (ng)': blank238,
                                     'Blank 232 (ng)': blank232,
-                                    'Ch. Blank 230 (fg)': chBlank230,
-                                    'Sp. Blank 230 (fg/g)': spBlank230})
+                                    'Ch. Blank 230 (fg)': chBlank230})
+
 
     def calc_concentrations(self, ratios):
+        # Add additional row if last standard was not measured
+        if len(ratios.index)+1 == len(self.metadata.index):
+            ratios = ratios.append(ratios.iloc[-2], ignore_index=True)
+
         self.metadata.index = ratios.index
 
+        # Ratio 234/233
+        r234233_err = ratios['Ratio 234/233'] * ratios['Error (%) 234/233'] / 100
+        r235236_err = ratios['Ratio 235/236'] * ratios['Error (%) 235/236'] / 100
 
         # Ratio 238/236
         r238236 = ratios['Ratio 235/236'] * self.NR85
-        r238236_err = r238236 * ratios['Error (%) 235/236'] / 100
+        r238236_err = r238236 * ratios['Error (%) 235/238'] / 100
 
         # print(ratios)
         # 234U
@@ -171,21 +218,21 @@ class Analyzer:
                 234.0409521 / 233.0396352)) -
                    (self.blanks['Blank 234 (fg)'] * 10 ** -15)) * 10 ** 12 / self.metadata['Einwaage (g)']
         u234pgg_err = u234pgg * ratios['Error (%) 234/233'] / 100
-        u234dpmg = (u234pgg / 234) * self.NA * 10 ** -12 * self.lambda234 / (365.2425 * 24 * 60)
+        u234dpmg = (u234pgg / 234.0409521) * self.NA * 10 ** -12 * self.lambda234 / (365.2425 * 24 * 60)
         u234dpmg_err = u234dpmg * ratios['Error (%) 234/233'] / 100
 
         # 238U
         u238mugg = ((r238236 * self.tri236 * 10 ** -9 * self.metadata['TriSp13 (g)'] * (238.0507882 / 236.045568)) -
                     (self.blanks['Blank 238 (ng)'] * 10 ** -9)) * 10 ** 6 / self.metadata['Einwaage (g)']
         u238mugg_err = u238mugg * ratios['Error (%) 235/236'] / 100
-        u238dpmg = (u238mugg / 238.05) * self.NA * 10 ** -6 * self.lambda238 / (365.2425 * 24 * 60)
+        u238dpmg = (u238mugg / 238.0507882) * self.NA * 10 ** -6 * self.lambda238 / (365.2425 * 24 * 60)
         u238dpmg_err = u238dpmg * ratios['Error (%) 235/236'] / 100
 
         # a234238
         a234238 = ratios['Ratio 234/238'] * self.lambda234 / self.lambda238
         a234238_err = a234238 * ratios['Error (%) 234/238'] / 100
         a234238_corr = [a234238[i] * 2 / (a234238[i - 1] + a234238[i + 1])
-                        if (0 < i < len(a234238) - 1 and self.standard not in ratios.iloc[i, 0]) else a234238[i] for i
+                        if (0 < i < len(a234238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a234238[i] for i
                         in range(len(a234238))]
         a234238_corr_err = a234238_corr * ratios['Error (%) 234/238'] / 100
 
@@ -194,16 +241,15 @@ class Analyzer:
             'Ratio 229/232']) -
                     (self.blanks['Blank 232 (ng)'] * 10 ** -9)) * 10 ** 9 / self.metadata['Einwaage (g)']
         th232ngg_err = th232ngg * ratios['Error (%) 229/232'] / 100
-        th232dpmg = (th232ngg / 232) * self.NA * 10 ** -9 * self.lambda232 / (365.2425 * 24 * 60)
+        th232dpmg = (th232ngg / 232.0380553) * self.NA * 10 ** -9 * self.lambda232 / (365.2425 * 24 * 60)
         th232dpmg_err = th232dpmg * ratios['Error (%) 229/232'] / 100
 
         # 230Th
         th230pgg = ((ratios['Ratio 230/229'] * self.tri229 * 10 ** -9 * self.metadata['TriSp13 (g)'] * (
                 230.0331338 / 229.031762)) -
-                    (self.blanks['Ch. Blank 230 (fg)'] * 10 ** -15) - (self.metadata['TriSp13 (g)'] * self.blanks[
-                    'Sp. Blank 230 (fg/g)'] * 10 ** -15)) * 10 ** 12 / self.metadata['Einwaage (g)']
+                    (self.blanks['Ch. Blank 230 (fg)'] * 10 ** -15)) * 10 ** 12 / self.metadata['Einwaage (g)']
         th230pgg_err = th230pgg * ratios['Error (%) 230/229'] / 100
-        th230dpmg = (th230pgg / 230) * self.NA * 10 ** -12 * self.lambda230 / (365.2425 * 24 * 60)
+        th230dpmg = (th230pgg / 230.0331338) * self.NA * 10 ** -12 * self.lambda230 / (365.2425 * 24 * 60)
         th230dpmg_err = th230dpmg * ratios['Error (%) 230/229'] / 100
 
         # a230232
@@ -215,7 +261,7 @@ class Analyzer:
         a230238 = th230dpmg / u238dpmg
         a230238_err = a230238 * np.sqrt((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2)
         a230238_corr = [a230238[i] * 2 / (a230238[i - 1] + a230238[i + 1])
-                        if (0 < i < len(a230238) - 1 and self.standard not in ratios.iloc[i, 0]) else a230238[i] for i
+                        if (0 < i < len(a230238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a230238[i] for i
                         in range(len(a230238))]
         a230238_corr_err = a230238_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
 
@@ -225,17 +271,18 @@ class Analyzer:
 
         # Ages
 
-        age_uncorr = [self.thu_alter_kombi(a230238[i], a234238[i]) for i in range(len(a230238))]
-        age_uncorr_err = [self.montealter(a230238[i], a230238_err[i], a234238[i], a234238_err[i]) for i in
+        age_uncorr = [self.thu_alter_kombi(a230238_corr[i], a234238_corr[i]) for i in range(len(a230238_corr))]
+
+        age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
+                    range(len(a230238_corr))]
+
+        age_uncorr_err = [self.montealter(a230238_corr[i], a230238_corr_err[i], a234238_corr[i], a234238_corr_err[i]) for i in
                           range(len(a230238))]
 
         age_uncorr_rel_err = [age_uncorr_err[i] / age_uncorr[i] * 100
                               if age_uncorr[i] != 'Out of range' and age_uncorr_err[i] != '/' else '/' for i in
                               range(len(age_uncorr))]
 
-        age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
-                    range(len(a230238_corr))]
-        print('age_corr', age_corr)
         age_corr_err = [self.marincorr_age_error(a230238_corr[i],
                                                  a230238_corr_err[i],
                                                  a234238_corr[i],
@@ -246,7 +293,7 @@ class Analyzer:
                                                  self.a230232_init_err) for i in range(len(a230238))]
 
         age_corr_rel_err = [age_corr_err[i] / age_corr[i] * 100
-                            if age_corr[i] != 'Out of range' and age_corr_err[i] != '/' else 'Out of range' for i in
+                            if age_corr[i] != 'Out of range' and age_corr_err[i] != '/' else '/' for i in
                             range(len(age_corr))]
 
         d234U = (np.array(a234238_corr) - 1) * 1000
@@ -281,7 +328,7 @@ class Analyzer:
                       if age_corr[i] != 'Out of range' else 'Out of range' for i in range(len(age_corr))]
         taylor_err_one_sig = [age_corr_taylor[i] / 2 * 1000
                               if age_corr_taylor[i] != '/' else '/' for i in range(len(cheng_corr))]
-        two_sig_t = [taylor_err_one_sig[i] / age_corr[i] * 100
+        two_sig_t = [age_corr_taylor[i] / age_corr[i] * 100
                      if taylor_err_one_sig != '/' and age_corr[i] != 'Out of range' else '/' for i in
                      range(len(age_corr))]
 
@@ -298,21 +345,21 @@ class Analyzer:
 
         self.calc = pd.DataFrame({
             'Lab. #': list(self.metadata['Lab. #']), 'Bezeich.': list(self.metadata['Bezeich.']),
-            '244/233U': list(ratios['Ratio 234/233']), 'Fehler1': list(ratios['Error (%) 234/233']),
-            '235/236U': list(ratios['Ratio 235/236']), 'Fehler2': list(ratios['Error (%) 235/236']),
+            '244/233U': list(ratios['Ratio 234/233']), 'Fehler1': list(r234233_err),
+            '235/236U': list(ratios['Ratio 235/236']), 'Fehler2': list(r235236_err),
             '238/236U': r238236, 'Fehler3': r238236_err,
             'Blank 234': self.blanks['Blank 234 (fg)'],
             '234U1': u234pgg, 'Fehler4': u234pgg_err,
             '234U2': u234dpmg, 'Fehler5': u234dpmg_err,
             'Blank 238': self.blanks['Blank 238 (ng)'],
             '238U1': u238mugg, 'Fehler6': u238mugg_err,
-            '238U2': u234dpmg, 'Fehler7': u234dpmg_err,
+            '238U2': u238dpmg, 'Fehler7': u238dpmg_err,
             '234U/238U': a234238, 'Fehler8': a234238_err,
             '234U/238Ukorr': a234238_corr, 'Fehler9': a234238_corr_err,
             'Blank 232': self.blanks['Blank 232 (ng)'],
             '232Th': th232ngg, 'Fehler10': th232ngg_err,
             'A232': th232dpmg, 'Fehler11': th232dpmg_err,
-            'Ch. Bl. 230': self.blanks['Ch. Blank 230 (fg)'], 'Sp. Bl. 230': self.blanks['Sp. Blank 230 (fg/g)'],
+            'Ch. Bl. 230': self.blanks['Ch. Blank 230 (fg)'],
             '230Th1': th230pgg, 'Fehler12': th230pgg_err,
             '230Th2': th230dpmg, 'Fehler13': th230dpmg_err,
             'A230/232': a230232, 'Fehler14': a230232_err,
@@ -333,7 +380,7 @@ class Analyzer:
                       '(abso.)', '(fg)', '(pg/g)', '(abs.)', '(dpm/g)', '(abso.)',
                       '(ng)', '(μg/g)', '(abso.)', '(dpm/g)', '(abso.)', 'Akt. Ver.',
                       '(abso.)', 'Akt. Ver.', '(abso.)', '(ng)', '(ng/g)', '(abso.)',
-                      '(dpm/g)', '(abso.)', '(fg)', '(fg/g)', '(pg/g)', '(abso.)',
+                      '(dpm/g)', '(abso.)', '(fg)', '(pg/g)', '(abso.)',
                       '(dpmg/g)', '(abso.)', '', '(abso.)', '(o/oo)', '(abso.) o/oo',
                       'Akt. Ver.', '(abso.)', 'Akt.Ver.', '(abso.)', '(ka)', '(ka)', '(%)',
                       'Akt. Ver.', '(abso.)', 'Akt. Ver. initial', '(abso.)', '(ka)', '(ka)',
@@ -349,22 +396,28 @@ class Analyzer:
 
         # Create results sheet dataframe
 
+        u238unitfactor = 1
+        u238unit = '(μg/g)'
+        if self.constantsType == 'stalag':
+            u238unitfactor = 1000
+            u238unit = '(ng/g)'
+
         self.results = pd.DataFrame({
             'Lab. #': list(self.metadata['Lab. #']), 'Bezeich.': list(self.metadata['Bezeich.']),
-            '238U': list(u238mugg), 'Fehler1': list(u238mugg_err),
+            '238U': list(u238unitfactor * u238mugg), 'Fehler1': list(u238unitfactor * u238mugg_err),
             '232Th': list(th232ngg), 'Fehler2': list(th232ngg_err),
             '230Th/238U': list(a230238_corr), 'Fehler3': list(a230238_corr_err),
             '230Th/232Th': list(a230232), 'Fehler4': list(a230232_err),
             'd234U korr': list(d234U), 'Fehler5': list(d234U_err),
             'Alter (unkorr.)': list(age_uncorr), 'Fehler6': list(age_uncorr_err),
             'Alter (korr.)': list(age_corr), 'Fehler7': list(age_corr_err),
-            'd234U (initial)': list(d234U), 'Fehler8': list(d234U_err),
+            'd234U (initial)': list(d234U_init), 'Fehler8': list(d234U_init_err),
             'Tiefe': list(self.metadata['Tiefe'])
         },
             index=ratios.iloc[:, 0])
 
         results_units = pd.DataFrame({'Lab. #': '', 'Bezeich.': '',
-                                      '238U': '(ng/g)', 'Fehler1': '(abso.)',
+                                      '238U': u238unit, 'Fehler1': '(abso.)',
                                       '232Th': '(ng/g)', 'Fehler2': '(abso.)',
                                       '230Th/238U': '(Akt.Ver)', 'Fehler3': '(abso.)',
                                       '230Th/232Th': '(Akt.Ver.)', 'Fehler4': '(abso.)',
@@ -387,12 +440,14 @@ class Analyzer:
         x2 = 1000000
         # i = 0
 
-        fl = ((1 - np.exp(-self.lambda230 * x1)) + (a234238 - 1) * (
+        exp = 2.71828182845905
+
+        fl = ((1 - exp ** (-self.lambda230 * x1)) + (a234238 - 1) * (
                 self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                      1 - np.exp(-(self.lambda230 - self.lambda234) * x1))) - a230238
-        fh = ((1 - np.exp(-self.lambda230 * x2)) + (a234238 - 1) * (
+                      1 - exp ** (-(self.lambda230 - self.lambda234) * x1))) - a230238
+        fh = ((1 - exp ** (-self.lambda230 * x2)) + (a234238 - 1) * (
                 self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                      1 - np.exp(-(self.lambda230 - self.lambda234) * x2))) - a230238
+                      1 - exp ** (-(self.lambda230 - self.lambda234) * x2))) - a230238
 
         if fl * fh >= 0:
             return "Out of range"
@@ -412,14 +467,15 @@ class Analyzer:
             dxold = abs(x2 - x1)
             dx = dxold
 
-            WERT = ((1 - np.exp(-self.lambda230 * t)) + (a234238 - 1) * (
+            WERT = ((1 - exp ** (-self.lambda230 * t)) + (a234238 - 1) * (
                     self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                            1 - np.exp(-(self.lambda230 - self.lambda234) * t))) - a230238
-            ABL = self.lambda230 * np.exp(-self.lambda230 * t) - (a234238 - 1) * (
+                            1 - exp ** (-(self.lambda230 - self.lambda234) * t))) - a230238
+            ABL = self.lambda230 * exp ** (-self.lambda230 * t) - (a234238 - 1) * (
                     self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                          -self.lambda230 + self.lambda234) * np.exp((-self.lambda230 + self.lambda234) * t)
+                          -self.lambda230 + self.lambda234) * exp ** ((-self.lambda230 + self.lambda234) * t)
 
             for i in range(100):
+
                 if ((t - xh) * ABL - WERT) * ((t - xl) * ABL - WERT) >= 0:
                     dxold = dx
                     dx = 0.5 * (xh - xl)
@@ -446,12 +502,12 @@ class Analyzer:
                 if abs(dx) < xacc:
                     return np.round(t / 1000, 4)
 
-                WERT = ((1 - np.exp(-self.lambda230 * t)) + (a234238 - 1) * (
+                WERT = ((1 - exp ** (-self.lambda230 * t)) + (a234238 - 1) * (
                         self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                                1 - np.exp(-(self.lambda230 - self.lambda234) * t))) - a230238
-                ABL = self.lambda230 * np.exp(-self.lambda230 * t) - (a234238 - 1) * (
+                                1 - exp ** (-(self.lambda230 - self.lambda234) * t))) - a230238
+                ABL = self.lambda230 * exp ** (-self.lambda230 * t) - (a234238 - 1) * (
                         self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                              -self.lambda230 + self.lambda234) * np.exp((-self.lambda230 + self.lambda234) * t)
+                              -self.lambda230 + self.lambda234) * exp ** ((-self.lambda230 + self.lambda234) * t)
 
                 if WERT < 0:
                     xl = t
@@ -459,10 +515,13 @@ class Analyzer:
                 else:
                     xh = t
                     fh = WERT
+        return "Out of range"
 
     # AV = a230238_coor
     # AU = a234238_corr
+
     def marincorr_age(self, a230238, a234238, a232238, a230232_init):
+
         xacc = 0.0001
         x1 = 0
         x2 = 1000000
@@ -498,6 +557,7 @@ class Analyzer:
                     a232238 * a230232_init - 1) * np.exp(-self.lambda230 * t)
 
             for i in range(100):
+
                 if ((t - xh) * ABL - WERT) * ((t - xl) * ABL - WERT) >= 0:
                     dxold = dx
                     dx = 0.5 * (xh - xl)
@@ -536,6 +596,8 @@ class Analyzer:
                 else:
                     xh = t
                     fh = WERT
+
+        return 'Out of range'
 
     # AV = a230238
     # AU = a234238
@@ -634,14 +696,6 @@ class Analyzer:
     # AO = a230238_corr_err)
     def taylor_err(self, au, aw, aj, as_, at, av, t, ao):
 
-        print('au', au)
-        print('aw', aw)
-        print('aj', aj)
-        print('as', as_)
-        print('at', at)
-        print('av', av)
-        print('t', t)
-        print('ao', ao)
         if aw == 'Out of range':
             return '/'
         else:

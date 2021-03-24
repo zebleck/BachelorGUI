@@ -13,6 +13,7 @@ import MathUtil
 import json
 from DataFrameModel import DataFrameModel
 import pandas as pd
+import Util
 
 
 class InputTabWidget(QWidget):
@@ -181,10 +182,18 @@ class InputTabWidget(QWidget):
         elif not os.path.isfile(self.constantsFileEdit.text()) or not self.constantsFileEdit.text().endswith('.cfg'):
             QMessageBox.critical(self, 'Not valid', 'Please load the constants first.', QMessageBox.Ok)
         else:
-            if not DataFolderUtil.willFilesBeMoved(path) or QMessageBox.question(
+            if (DataFolderUtil.willFilesBeMoved(path) and not DataFolderUtil.willFilesBeDeleted(path) and QMessageBox.question(
                     self, 'Run', 'This will move files in "{}". Are you sure you want to proceed?'.format(path),
                     QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No) == QMessageBox.Yes:
+                    QMessageBox.No) == QMessageBox.Yes) \
+                    or (not DataFolderUtil.willFilesBeMoved(path) and DataFolderUtil.willFilesBeDeleted(path) and QMessageBox.question(
+                    self, 'Run', 'This will delete files in "{}". Are you sure you want to proceed?'.format(path),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No) == QMessageBox.Yes) \
+                    or (DataFolderUtil.willFilesBeDeleted(path) and DataFolderUtil.willFilesBeMoved(path) and QMessageBox.question(
+                    self, 'Run', 'This will move and delete files in "{}". Are you sure you want to proceed?'.format(path),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No) == QMessageBox.Yes) or (not DataFolderUtil.willFilesBeDeleted(path) and not DataFolderUtil.willFilesBeMoved(path)):
 
                 self.window.calcRatios(path)
                 self.addRatios()
@@ -267,8 +276,16 @@ class InputTabWidget(QWidget):
 
     def get_constants(self):
         constants = {}
+        path = self.constantsFileEdit.text()
         with open(self.constantsFileEdit.text(), 'r') as file:
             constants = json.loads(file.read().replace('\n', ''))
+        fileName = Util.path_leaf(path)
+        if 'coral' in fileName:
+            constants['type'] = 'coral'
+        elif 'stalag' in fileName:
+            constants['type'] = 'stalag'
+        else:
+            constants['type'] = 'stalag'
         return constants
 
     ''' +-----------------------------+ '''

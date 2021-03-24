@@ -16,14 +16,10 @@ def format(writer, dfs):
 
         header_format = writer.book.add_format({'bold': True, 'align': 'center', 'border': 0})
         bottom_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'bottom': 6})
+        #non_standard_format = writer.book.add_format({'num_format': '0,0###########'})
         standard_format = writer.book.add_format({'bg_color': '#d8e4bc'})
         superscript = writer.book.add_format({'bold': True, 'font_script': 1})
         subscript = writer.book.add_format({'bold': True, 'font_script': 2})
-
-        # Set header formats
-        if sheetname == 'Input' or sheetname == 'Results' or sheetname == 'Calc':
-            worksheet.set_row(0, None, header_format)
-            worksheet.set_row(1, None, bottom_border_format)
 
         # Set standard row color
         if standard is not None and ('Lab. #' in df or 'Lab.Nr.' in dfs):
@@ -31,6 +27,11 @@ def format(writer, dfs):
             for i in range(len(labnrs)):
                 if labnrs[i] == standard:
                     worksheet.set_row(i+1, None, standard_format)
+
+        # Set header formats
+        if sheetname == 'Input' or sheetname == 'Results' or sheetname == 'Calc':
+            worksheet.set_row(0, None, header_format)
+            worksheet.set_row(1, None, bottom_border_format)
 
         for idx, col in enumerate(df.columns):  # loop through all columns
             series = df[col]

@@ -66,6 +66,7 @@ class Window(QtWidgets.QMainWindow):
 
     def calcRatios(self, path):
         DataFolderUtil.createDataFolders(path)
+        DataFolderUtil.removeUnnecessaryFiles(path)
         self.ratioBuilder.set_path(path)
         self.ratioBuilder.set_constants(self.inputTab.get_constants())
         self.ratioBuilder.set_specific_constants(self.inputTab.get_specific_constants())
@@ -77,8 +78,7 @@ class Window(QtWidgets.QMainWindow):
     def startAnalysis(self, metadatapath):
         self.analyzer.set_path(self.ratioBuilder.data_root_folder)
         self.analyzer.set_constants(self.inputTab.get_constants())
-        self.analyzer.set_metadata(metadatapath)
-
+        self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
         self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
         self.analysisTab.display()
 

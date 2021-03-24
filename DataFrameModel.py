@@ -12,7 +12,7 @@ class DataFrameModel(QtCore.QAbstractTableModel):
         if showIndex:
             data.reset_index(inplace=True)
         self._data = data
-        self.standards = standards
+        self.standards = str(standards)
 
     def rowCount(self, parent=None):
         return self._data.shape[0]
