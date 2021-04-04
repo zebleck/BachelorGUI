@@ -50,7 +50,12 @@ def findStandardNumber(path):
     data = re.split(r'\D+', ''.join(glob.glob('.\\*.exp') + glob.glob('data\*.exp')))
 
     os.chdir(old_path)
-    return max(set(data), key=data.count)
+
+    maxN = max(set(data), key=data.count)
+    if maxN == '' or data.count(maxN) == 1:
+        return None
+    else:
+        return max(set(data), key=data.count)
 
 def createDataFolders(path):
     old_path = os.getcwd()

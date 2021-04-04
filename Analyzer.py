@@ -18,7 +18,9 @@ class Analyzer:
 
     def set_path(self, path):
         self.data_root_folder = path
-        self.standard = int(DataFolderUtil.findStandardNumber(path))
+        self.standard = DataFolderUtil.findStandardNumber(path)
+        if self.standard is not None:
+            self.standard = int(self.standard)
 
     def set_constants(self, constants):
         self.constantsType = constants['type']
@@ -144,12 +146,15 @@ class Analyzer:
 
 
         # get all valid laboratory numbers from the ratios dataframe (from the datafiles)
-        measurementLabNrs = re.split(r'\d+(?!\.)\D{1}', ''.join(list(ratios.iloc[:,0])))[1:]
+        measurementLabNrs = re.split(r'\d+(?!\.)\D{1}', ''.join(list(ratios.iloc[:, 0])))[1:]
+        # remove ''
+        measurementLabNrs = [val for val in measurementLabNrs if val != '']
+
         for i, nr in enumerate(measurementLabNrs):
             if '.exp' in nr:
                 measurementLabNrs[i] = int(nr.replace('.exp', ''))
 
-        if measurementLabNrs[-1] != self.standard:
+        if measurementLabNrs[-1] != self.standard and self.standard is not None:
             measurementLabNrs.append(self.standard)
 
 
@@ -161,7 +166,6 @@ class Analyzer:
             'Einwaage (g)': [], 'TriSp13 (g)': []
         }
 
-        #print(fullMetadata)
         for labnr in measurementLabNrs:
             if labnr == self.standard:
                 metadata_dict['Lab. #'].append(labnr)
@@ -270,6 +274,8 @@ class Analyzer:
         a232238_err = a232238 * np.sqrt((th232dpmg_err / th232dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
 
         # Ages
+
+        self.specific_number = None
 
         age_uncorr = [self.thu_alter_kombi(a230238_corr[i], a234238_corr[i]) for i in range(len(a230238_corr))]
 
@@ -533,18 +539,15 @@ class Analyzer:
                 self.lambda230 / (self.lambda230 - self.lambda234)) * (
                      1 - np.exp(-(self.lambda230 - self.lambda234) * x2)) - a230238
 
-        if (fl * fh >= 0):
+        if fl * fh >= 0:
             return "Out of range"
         else:
-            if (fl < 0):
+            if fl < 0:
                 xl = x1
                 xh = x2
             else:
                 xh = x1
                 xl = x2
-                swap = fl
-                fl = fh
-                fh = swap
 
             t = 0.5 * (x1 + x2)
             dxold = abs(x2 - x1)
@@ -558,27 +561,20 @@ class Analyzer:
 
             for i in range(100):
 
+                if self.specific_number is not None and self.specific_number == 11074:
+                    self.specific_string.append('{}, {}, {}, {}'.format(a230232_init, abs(dx), xacc, np.round(t/1000, 4)))
                 if ((t - xh) * ABL - WERT) * ((t - xl) * ABL - WERT) >= 0:
                     dxold = dx
                     dx = 0.5 * (xh - xl)
-                    t = x1 + dx
-
-                    if abs(dx) < xacc:
-                        return np.round(t / 1000, 4)
+                    t = xl + dx
                 elif abs(2 * WERT) > abs(dxold * ABL):
                     dxold = dx
                     dx = 0.5 * (xh - xl)
-                    t = x1 + dx
-
-                    if abs(dx) < xacc:
-                        return np.round(t / 1000, 4)
+                    t = xl + dx
                 else:
                     dxold = dx
                     dx = WERT / ABL
-                    temp = t
                     t = t - dx
-                    if temp == t:
-                        return np.round(t / 1000, 4)
 
                 if abs(dx) < xacc:
                     return np.round(t / 1000, 4)
@@ -592,10 +588,8 @@ class Analyzer:
 
                 if WERT < 0:
                     xl = t
-                    fl = WERT
                 else:
                     xh = t
-                    fh = WERT
 
         return 'Out of range'
 
@@ -616,11 +610,12 @@ class Analyzer:
         res = np.empty(iter)
 
         for i in range(iter):
-            felda[i] = self.gauss() * (0.5 * a230238_err) + a230238
-            feldb[i] = self.gauss() * (0.5 * a234238_err) + a234238
-            feldc[i] = self.gauss() * (0.5 * a232238_err) + a232238
-            feldd[i] = self.gauss() * (0.5 * a230232_init_err) + a230232_init
+            felda[i] = self.gauss() * a230238_err + a230238
+            feldb[i] = self.gauss() * a234238_err + a234238
+            feldc[i] = self.gauss() * a232238_err + a232238
+            feldd[i] = self.gauss() * a230232_init_err + a230232_init
             result = self.marincorr_age(felda[i], feldb[i], feldc[i], feldd[i])
+
             if result == 'Out of range':
                 return '/'
             res[i] = result
@@ -633,7 +628,7 @@ class Analyzer:
         for i in range(iter):
             summe = summe + ((res[i] - mean) * (res[i] - mean))
 
-        fehl = 2 * np.sqrt(summe / (iter - 1))
+        fehl = np.sqrt(summe / (iter - 1))
 
         return np.round(fehl, 10)
 

@@ -106,8 +106,6 @@ class Window(QtWidgets.QMainWindow):
     def close_application(self):
         sys.exit()
 
-import re
-
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     app = QtWidgets.QApplication(sys.argv)

@@ -52,11 +52,16 @@ class RatioBuilder:
         self.lambda232 = constants['l232']
 
     def set_specific_constants(self, specific_constants):
-        self.blk = specific_constants['Blank']
+        useBlank = specific_constants['Blank']
+        if useBlank:
+            self.blk = 1
+        else:
+            self.blk = 0
         self.yield_Th = specific_constants['Yield_Th']
         self.yield_U = specific_constants['Yield_U']
         self.gain = specific_constants['Gain']
         self.tailShift = specific_constants['Tail shift']
+        self.useMean = specific_constants['Use mean']
 
     def post_904IC(self, data, i, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
                    R35_33,
@@ -64,90 +69,74 @@ class RatioBuilder:
                    mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
-        err_data33 = 2 * np.std(data33) / np.sqrt(len(data33))
-        abs_data33 = np.mean(data33)
 
         data34 = data[:, 1] - UH_plus * data33 * cps * yield_U - data33 * R34_33 * cps * yield_U - data[:, 4] * \
                  tail_mat[4] * cps * yield_U - blk * datablkm[i, 1]  # U234
-        err_data34 = 2 * np.std(data34) / np.sqrt(len(data34))
-        abs_data34 = np.mean(data34)
 
         data35 = (data[:, 2] - (data[:, 1] * UH_plus) / (cps * yield_U)) - data33 * R35_33 - data[:, 4] * tail_mat_cup[
             5] - blk * datablkm[i, 2]  # U235
-        err_data35 = 2 * np.std(data35) / np.sqrt(len(data35))
-        abs_data35 = np.mean(data35)
 
         data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
-        err_data36 = 2 * np.std(data36) / np.sqrt(len(data36))
-        abs_data36 = np.mean(data36)
 
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
-        err_data38 = 2 * np.std(data38) / np.sqrt(len(data38))
-        abs_data38 = np.mean(data38)
 
         data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
                  datablkm[i, 7] - data[:, 4] * slope229Correction  # Th229
-        err_data29 = 2 * np.std(data29) / np.sqrt(len(data29))
-        abs_data29 = np.mean(data29)
 
         data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
                  tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5]  # Th230 U
-        err_data30 = 2 * np.std(data30) / np.sqrt(len(data30))
-        abs_data30 = np.mean(data30)
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
-        err_data32 = 2 * np.std(data32) / np.sqrt(len(data32))
-        abs_data32 = np.mean(data32)
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
         R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
         R58u = data35 / data38  # U235/U238 for monitoring machine drift
-        [R58u, errR58u, R58u_, errRel58u] = outliertest(
+        [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
         R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
-        [R58, errR58, R58_, errRel58] = outliertest(R58)
+        [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
         R34 = data33 / (data34 / (cps * yield_U)) * (1 / 137.881 / R58d) ** mf34  # U233/U234
-        [R34, errR34, R34_, errRel34] = outliertest(R34)
+        [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
         R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236
-        [R56, errR56, R56_, errRel56] = outliertest(R56)
+        [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
         R48 = (data34 / (cps * yield_U)) / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
-        [R48, errR48, R48_, errRel48] = outliertest(R48)
+        [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
         R09 = data30 / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
-        [R09, errR09, R09_, errRel09] = outliertest(R09)
+        [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
         R29 = data32 / (data29 / (cps * yield_Th)) * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
-        [R29, errR29, R29_, errRel29] = outliertest(R29)
+        [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
         R43 = (data34 / (cps * yield_U)) / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
-        [R43, errR43, R43_, errRel43] = outliertest(R43)
+        [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
         R92 = (data29 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
-        [R92, errR92, R92_, errRel92] = outliertest(R92)
+        [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
         R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
-        [R36, errR36, R36_, errRel36] = outliertest(R36)
+        [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
         R45 = (data34 / (cps * yield_U)) / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
-        [R45, errR45, R45_, errRel45] = outliertest(R45)
+        [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
         R02 = (data30 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
-        [R02, errR02, R02_, errRel02] = outliertest(R02)
+        [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
         R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
-        [R38, errR38, R38_, errRel38] = outliertest(R38)
+        [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
         R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
-        [R68, errR68, R68_, errRel68] = outliertest(R68)
+        [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
         R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
-        [R35, errR35, R35_, errRel35] = outliertest(R35)
+        [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
@@ -157,90 +146,74 @@ class RatioBuilder:
                   mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
-        err_data33 = 2 * np.std(data33) / np.sqrt(len(data33))
-        abs_data33 = np.mean(data33)
 
         data34 = gain13 * data[:, 1] - UH_plus * data33 - data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
                  datablkm[i, 1] / (cps * yield_U)  # U234
-        err_data34 = 2 * np.std(data34) / np.sqrt(len(data34))
-        abs_data34 = np.mean(data34)
 
         data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
                  datablkm[i, 2]  # U235
-        err_data35 = 2 * np.std(data35) / np.sqrt(len(data35))
-        abs_data35 = np.mean(data35)
 
         data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
-        err_data36 = 2 * np.std(data36) / np.sqrt(len(data36))
-        abs_data36 = np.mean(data36)
 
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
-        err_data38 = 2 * np.std(data38) / np.sqrt(len(data38))
-        abs_data38 = np.mean(data38)
 
         data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
                  datablkm[i, 7] - data[:, 4] * slope229Correction  # Th229
-        err_data29 = 2 * np.std(data29) / np.sqrt(len(data29))
-        abs_data29 = np.mean(data29)
 
         data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
                  tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5]  # Th230
-        err_data30 = 2 * np.std(data30) / np.sqrt(len(data30))
-        abs_data30 = np.mean(data30)
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
-        err_data32 = 2 * np.std(data32) / np.sqrt(len(data32))
-        abs_data32 = np.mean(data32)
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
         R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
         R58u = data35 / data38  # U235/U238 for monitoring machine drift
-        [R58u, errR58u, R58u_, errRel58u] = outliertest(
+        [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
         R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
-        [R58, errR58, R58_, errRel58] = outliertest(R58)
+        [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
         R34 = data33 / data34 * (1 / 137.881 / R58d) ** mf34  # U233/U234
-        [R34, errR34, R34_, errRel34] = outliertest(R34)
+        [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
         R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236 and mass fractionation
-        [R56, errR56, R56_, errRel56] = outliertest(R56)
+        [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
         R48 = data34 / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
-        [R48, errR48, R48_, errRel48] = outliertest(R48)
+        [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
         R09 = data30 / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
-        [R09, errR09, R09_, errRel09] = outliertest(R09)
+        [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
         R29 = data32 / (data29 / (cps * yield_Th)) * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
-        [R29, errR29, R29_, errRel29] = outliertest(R29)
+        [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
         R43 = data34 / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
-        [R43, errR43, R43_, errRel43] = outliertest(R43)
+        [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
         R92 = ((data29 / cps) * yield_Th / data32) * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
-        [R92, errR92, R92_, errRel92] = outliertest(R92);
+        [R92, errR92, R92_, errRel92] = self.outliertest(R92);
 
         R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
-        [R36, errR36, R36_, errRel36] = outliertest(R36)
+        [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
         R45 = data34 / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
-        [R45, errR45, R45_, errRel45] = outliertest(R45)
+        [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
         R02 = (data30 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
-        [R02, errR02, R02_, errRel02] = outliertest(R02)
+        [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
         R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
-        [R38, errR38, R38_, errRel38] = outliertest(R38)
+        [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
         R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
-        [R68, errR68, R68_, errRel68] = outliertest(R68)
+        [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
         R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
-        [R35, errR35, R35_, errRel35] = outliertest(R35)
+        [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
@@ -251,90 +224,74 @@ class RatioBuilder:
                  mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
-        err_data33 = 2 * np.std(data33) / np.sqrt(len(data33))
-        abs_data33 = np.mean(data33)
 
         data34 = gain13 * data[:, 1] - UH_plus * data33 - data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
                  datablkm[i, 1]  # U234
-        err_data34 = 2 * np.std(data34) / np.sqrt(len(data34))
-        abs_data34 = np.mean(data34)
 
         data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
                  datablkm[i, 2]  # U235
-        err_data35 = 2 * np.std(data35) / np.sqrt(len(data35))
-        abs_data35 = np.mean(data35)
 
         data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
-        err_data36 = 2 * np.std(data36) / np.sqrt(len(data36))
-        abs_data36 = np.mean(data36)
 
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
-        err_data38 = 2 * np.std(data38) / np.sqrt(len(data38))
-        abs_data38 = np.mean(data38)
 
         data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
             i, 7] - data[:, 4] * slope229Correction / cps  # Th229
-        err_data29 = 2 * np.std(data29) / np.sqrt(len(data29))
-        abs_data29 = np.mean(data29)
 
         data30 = data[:, 6] - ThH_plus * data29 * cps * yield_Th - data29 * R30_29 * cps * yield_Th - data[:, 4] * \
                  tail_mat[1] * cps * yield_U - tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[
                      i, 5]  # Th230
-        err_data30 = 2 * np.std(data30) / np.sqrt(len(data30));
-        abs_data30 = np.mean(data30);
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[6, i]  # Th232
-        err_data32 = 2 * np.std(data32) / np.sqrt(len(data32))
-        abs_data32 = np.mean(data32)
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
         R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
         R58u = data35 / data38  # U235/U238 for monitoring machine drift
-        [R58u, errR58u, R58u_, errRel58u] = outliertest(
+        [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
         R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
-        [R58, errR58, R58_, errRel58] = outliertest(R58)
+        [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
         R34 = data33 / data34 * (1 / 137.881 / R58d) ** mf34  # U233/U234
-        [R34, errR34, R34_, errRel34] = outliertest(R34)
+        [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
         R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236 and mass fractionation
-        [R56, errR56, R56_, errRel56] = outliertest(R56)
+        [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
         R48 = data34 / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
-        [R48, errR48, R48_, errRel48] = outliertest(R58u)
+        [R48, errR48, R48_, errRel48] = self.outliertest(R58u)
 
         R09 = (data30 / (cps * yield_Th)) / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
-        [R09, errR09, R09_, errRel09] = outliertest(R09)
+        [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
         R29 = data32 / data29 * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
-        [R29, errR29, R29_, errRel29] = outliertest(R29)
+        [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
         R43 = data34 / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
-        [R43, errR43, R43_, errRel43] = outliertest(R43)
+        [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
         R92 = data29 / data32 * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
-        [R92, errR92, R92_, errRel92] = outliertest(R92)
+        [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
         R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
-        [R36, errR36, R36_, errRel36] = outliertest(R36)
+        [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
         R45 = data34 / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
-        [R45, errR45, R45_, errRel45] = outliertest(R45)
+        [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
         R02 = (data30 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
-        [R02, errR02, R02_, errRel02] = outliertest(R02)
+        [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
         R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
-        [R38, errR38, R38_, errRel38] = outliertest(R38)
+        [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
         R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
-        [R68, errR68, R68_, errRel68] = outliertest(R68)
+        [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
         R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
-        [R35, errR35, R35_, errRel35] = outliertest(R35)
+        [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
@@ -345,89 +302,74 @@ class RatioBuilder:
                     mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
-        err_data33 = 2 * np.std(data33) / np.sqrt(len(data33))
-        abs_data33 = np.mean(data33)
 
         data34 = gain13 * data[:, 1] - UH_plus * data33 - data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
                  datablkm[i, 1] / cps  # U234
-        err_data34 = 2 * np.std(data34) / np.sqrt(len(data34))
-        abs_data34 = np.mean(data34)
+
 
         data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
                  datablkm[i, 2]  # U235
-        err_data35 = 2 * np.std(data35) / np.sqrt(len(data35))
-        abs_data35 = np.mean(data35)
 
         data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
-        err_data36 = 2 * np.std(data36) / np.sqrt(len(data36))
-        abs_data36 = np.mean(data36)
 
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
-        err_data38 = 2 * np.std(data38) / np.sqrt(len(data38))
-        abs_data38 = np.mean(data38)
 
         data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
             i, 7] / cps - data[:, 4] * slope229Correction / cps  # Th229
-        err_data29 = 2 * np.std(data29) / np.sqrt(len(data29))
-        abs_data29 = np.mean(data29)
 
         data30 = gain13 * data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat_cup[1] - \
                  tail_mat_th_cup[1] * data[:, 7] - blk * datablkm[i, 5] / cps  # Th230
-        err_data30 = 2 * np.std(data30) / np.sqrt(len(data30))
-        abs_data30 = np.mean(data30)
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
-        err_data32 = 2 * np.std(data32) / np.sqrt(len(data32))
-        abs_data32 = np.mean(data32)
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
         R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
         R58u = data35 / data38  # U235/U238 for monitoring machine drift
-        [R58u, errR58u, R58u_, errRel58u] = outliertest(
+        [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
         R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
-        [R58, errR58, R58_, errRel58] = outliertest(R58)
+        [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
         R34 = data33 / data34 * (1 / 137.881 / R58d) ** mf34  # U233/U234
-        [R34, errR34, R34_, errRel34] = outliertest(R34)
+        [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
         R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236 and mass fractionation
-        [R56, errR56, R56_, errRel56] = outliertest(R56)
+        [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
         R48 = data34 / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
-        [R48, errR48, R48_, errRel48] = outliertest(R48)
+        [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
         R09 = data30 / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
-        [R09, errR30, R09_, errRel09] = outliertest(R09)
+        [R09, errR30, R09_, errRel09] = self.outliertest(R09)
 
         R29 = data32 / data29 * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
-        [R29, errR32, R29_, errRel29] = outliertest(R29)
+        [R29, errR32, R29_, errRel29] = self.outliertest(R29)
 
         R43 = data34 / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
-        [R43, errR43, R43_, errRel43] = outliertest(R43)
+        [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
         R92 = data29 / data32 * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
-        [R92, errR92, R92_, errRel92] = outliertest(R92)
+        [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
         R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
-        [R36, errR36, R36_, errRel36] = outliertest(R36)
+        [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
         R45 = data34 / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
-        [R45, errR45, R45_, errRel45] = outliertest(R45)
+        [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
         R02 = data30 / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
-        [R02, errR02, R02_, errRel02] = outliertest(R02)
+        [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
         R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
-        [R38, errR38, R38_, errRel38] = outliertest(R38)
+        [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
         R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
-        [R68, errR68, R68_, errRel68] = outliertest(R68)
+        [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
         R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
-        [R35, errR35, R35_, errRel35] = outliertest(R35)
+        [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
@@ -439,10 +381,10 @@ class RatioBuilder:
         listyu = os.listdir('yhas_u')
         namesyu = np.array(listyu)
 
-        if self.tailShift == 0:
-            x_axis_tail_u = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
-        elif self.tailShift == 1:
+        if self.tailShift:
             x_axis_tail_u = np.array([227.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
+        else:
+            x_axis_tail_u = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing SEM/RPQ
         # x_axis_tail_u_cup = np.array([228.5, 233.5, 236.5, 236.7, 237.05, 237.5])  # half-masses tailing cup
         os.chdir('yhas_u')
 
@@ -495,7 +437,7 @@ class RatioBuilder:
 
         self.x_axis_tail_u = x_axis_tail_u
         self.aatsu = dummyu
-        #print(self.aatsu)
+        # print(self.aatsu)
 
         self.f_u238 = scipy.interpolate.PchipInterpolator(self.x_axis_tail_u, self.aatsu)
 
@@ -603,7 +545,7 @@ class RatioBuilder:
 
         g_th232 = self.g_th232
         tail_mat_th = [g_th232(229), g_th232(230)] / (
-                    self.yield_Th * self.cps * self.th232tail)  # tailing Th-232 on SEM/RPQ
+                self.yield_Th * self.cps * self.th232tail)  # tailing Th-232 on SEM/RPQ
 
         if tail_mat_th[0] < 2e-9:  # empirically determined threshold for too low signals
             tail_mat_th[0] = 2e-9
@@ -806,8 +748,8 @@ class RatioBuilder:
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
                  errRel35] = self.post_allcup(data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain,
                                               self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33,
-                                              self.tail_mat, self.R35_33, self.tail_mat_th, self.R30_29, self.yield_Th,
-                                              self.slope229Correction, self.mf48,
+                                              self.tail_mat, self.tail_mat_th_cup, self.R35_33, self.tail_mat_th,
+                                              self.R30_29, self.yield_Th, self.slope229Correction, self.mf48,
                                               self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
                                               self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
                                               self.mf02)  # measurement method: all isotopes on cup
@@ -866,22 +808,24 @@ class RatioBuilder:
 
         return datacorr
 
+    def outliertest(self, X):
+        smaller = np.mean(X) + 2 * np.std(X, ddof=1)
+        larger = np.mean(X) - 2 * np.std(X, ddof=1)
 
-def outliertest(X):
-    smaller = np.mean(X) + 2 * np.std(X, ddof=1)
-    larger = np.mean(X) - 2 * np.std(X, ddof=1)
+        for m in range(len(X)):
+            if (X[m] > smaller) or (X[m] < larger):
+                X[m] = float('nan')
+            else:
+                X[m] = X[m]
 
-    for m in range(len(X)):
-        if (X[m] > smaller) or (X[m] < larger):
-            X[m] = float('nan')
+        X = X[~np.isnan(X)]
+
+        errX = 2 * np.std(X, ddof=1) / np.sqrt(len(X))  # 2 sigma SE
+
+        if self.useMean:
+            meanX = np.mean(X)
         else:
-            X[m] = X[m]
+            meanX = np.median(X)
+        errRelX = errX / meanX  # 2 sigma relative error
 
-    X = X[~np.isnan(X)]
-
-    errX = 2 * np.std(X, ddof=1) / np.sqrt(len(X))  # 2 sigma SE
-
-    meanX = np.median(X)  # mean
-    errRelX = errX / meanX  # 2 sigma relative error
-
-    return X, errX, meanX, errRelX
+        return X, errX, meanX, errRelX

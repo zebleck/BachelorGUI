@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QLineEdit, QLabel, QPushButton, QFileIconProvider, QMessageBox, QSlider, \
-                            QTableWidget, QTableWidgetItem, QHeaderView, QListWidget, QListWidgetItem, QFileDialog, QHBoxLayout, QSpacerItem, \
+                            QTableWidget, QTableWidgetItem, QHeaderView, QListWidget, QListWidgetItem, QFileDialog, QHBoxLayout, QCheckBox, \
                             QTableView
 from PyQt5.QtCore import Qt
 import pyqtgraph as pg
@@ -84,28 +84,23 @@ class InputTabWidget(QWidget):
         tablesLayout = QGridLayout()
 
         customTable = QTableWidget()
-        customTable.setRowCount(5)
+        customTable.setRowCount(3)
         customTable.setColumnCount(2)
-        blankItem = QTableWidgetItem('Blank (1/0)')
-        blankItem.setFlags(Qt.ItemIsEditable)
         yieldUItem = QTableWidgetItem('Yield (U)')
+        yieldUItem.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
         yieldUItem.setFlags(Qt.ItemIsEditable)
         yieldThItem = QTableWidgetItem('Yield (Th)')
+        yieldThItem.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
         yieldThItem.setFlags(Qt.ItemIsEditable)
         gainItem = QTableWidgetItem('Gain (13 Ohm)')
+        gainItem.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
         gainItem.setFlags(Qt.ItemIsEditable)
-        halfMassItem = QTableWidgetItem('Tail shift (1: 227.5 / 0: 228.5)')
-        halfMassItem.setFlags(Qt.ItemIsEditable)
-        customTable.setItem(0, 0, blankItem)
-        customTable.setItem(1, 0, yieldUItem)
-        customTable.setItem(2, 0, yieldThItem)
-        customTable.setItem(3, 0, gainItem)
-        customTable.setItem(4, 0, halfMassItem)
+        customTable.setItem(0, 0, yieldUItem)
+        customTable.setItem(1, 0, yieldThItem)
+        customTable.setItem(2, 0, gainItem)
         customTable.setItem(0, 1, QTableWidgetItem('1'))
         customTable.setItem(1, 1, QTableWidgetItem('1'))
         customTable.setItem(2, 1, QTableWidgetItem('1'))
-        customTable.setItem(3, 1, QTableWidgetItem('1'))
-        customTable.setItem(4, 1, QTableWidgetItem('0'))
         customTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         customTable.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         customTable.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -113,9 +108,34 @@ class InputTabWidget(QWidget):
         customTable.verticalHeader().setVisible(False)
         self.customTable = customTable
 
+        font = QtGui.QFont()
+        font.setPixelSize(12)
+
+        tailShiftLabel = QLabel('Tailshift von 228.5 zu 227.5?')
+        tailShiftLabel.setFont(font)
+        tailShiftLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        blankLabel = QLabel('Blank abziehen?')
+        blankLabel.setFont(font)
+        blankLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        meanMedianLabel = QLabel('Mean anstatt Median für Outlier-Detektion?')
+        meanMedianLabel.setFont(font)
+        meanMedianLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.tailShiftCheckBox = QCheckBox()
+        self.blankCheckBox = QCheckBox()
+        self.blankCheckBox.setChecked(True)
+        self.meanMedianCheckBox = QCheckBox()
+
         customBox = QGroupBox('Custom constants')
         customLayout = QGridLayout()
-        customLayout.addWidget(customTable)
+        customLayout.setVerticalSpacing(15)
+        customLayout.addWidget(customTable, 0, 0, 1, 2)
+        customLayout.addWidget(blankLabel, 1, 0, 1, 1)
+        customLayout.addWidget(tailShiftLabel, 2, 0, 1, 1)
+        customLayout.addWidget(meanMedianLabel, 3, 0, 1, 1)
+        customLayout.addWidget(self.blankCheckBox, 1, 1, 1, 1)
+        customLayout.addWidget(self.tailShiftCheckBox, 2, 1, 1, 1)
+        customLayout.addWidget(self.meanMedianCheckBox, 3, 1, 1, 1)
+        customLayout.addItem(QtWidgets.QSpacerItem(0, 15, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum), 4, 1, 1, 1)
         customBox.setLayout(customLayout)
 
         # File stats overview
@@ -266,11 +286,12 @@ class InputTabWidget(QWidget):
 
     def get_specific_constants(self):
         specific = {
-            'Blank': float(self.customTable.item(0, 1).text()),
-            'Yield_U': float(self.customTable.item(1, 1).text()),
-            'Yield_Th': float(self.customTable.item(2, 1).text()),
-            'Gain': float(self.customTable.item(3, 1).text()),
-            'Tail shift': float(self.customTable.item(4, 1).text())
+            'Blank': self.blankCheckBox.isChecked(),
+            'Yield_U': float(self.customTable.item(0, 1).text()),
+            'Yield_Th': float(self.customTable.item(1, 1).text()),
+            'Gain': float(self.customTable.item(2, 1).text()),
+            'Tail shift': self.tailShiftCheckBox.isChecked(),
+            'Use mean': self.meanMedianCheckBox.isChecked()
         }
         return specific
 
