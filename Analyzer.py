@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
-import os
 import re
 
-import openpyxl
 from pandas import ExcelWriter
 
 import DataFolderUtil
@@ -558,8 +556,6 @@ class Analyzer:
 
             for i in range(100):
 
-                if self.specific_number is not None and self.specific_number == 11074:
-                    self.specific_string.append('{}, {}, {}, {}'.format(a230232_init, abs(dx), xacc, np.round(t/1000, 4)))
                 if ((t - xh) * ABL - WERT) * ((t - xl) * ABL - WERT) >= 0:
                     dxold = dx
                     dx = 0.5 * (xh - xl)
