@@ -393,12 +393,9 @@ class Analyzer:
                       'Taylor 1. Ord.', '(%)', '', self.tiefe_unit, '(o/oo)', '(abso.) o/oo',
                       '(a BP)', '(a)', '(%)']
 
-        #print(list(self.calc.columns), len(list(self.calc.columns)))
-        #print(calc_units, len(calc_units))
         calc_units_frame = pd.DataFrame(dict(zip(self.calc.columns, calc_units)), index=[''])
 
         self.calc = pd.concat([self.calc.iloc[:0], calc_units_frame, self.calc[0:]])
-        #print(dict(zip(self.calc.columns, calc_units)))
 
         # Create results sheet dataframe
 

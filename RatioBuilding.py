@@ -748,7 +748,7 @@ class RatioBuilder:
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
                  errRel35] = self.post_allcup(data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain,
                                               self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33,
-                                              self.tail_mat, self.tail_mat_th_cup, self.R35_33, self.tail_mat_th,
+                                              self.tail_mat, self.R35_33, self.tail_mat_th, self.tail_mat_th_cup,
                                               self.R30_29, self.yield_Th, self.slope229Correction, self.mf48,
                                               self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
                                               self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
