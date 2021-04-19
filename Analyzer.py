@@ -441,14 +441,12 @@ class Analyzer:
         x2 = 1000000
         # i = 0
 
-        exp = 2.71828182845905
-
-        fl = ((1 - exp ** (-self.lambda230 * x1)) + (a234238 - 1) * (
+        fl = ((1 - np.exp(-self.lambda230 * x1)) + (a234238 - 1) * (
                 self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                      1 - exp ** (-(self.lambda230 - self.lambda234) * x1))) - a230238
-        fh = ((1 - exp ** (-self.lambda230 * x2)) + (a234238 - 1) * (
+                      1 - np.exp(-(self.lambda230 - self.lambda234) * x1))) - a230238
+        fh = ((1 - np.exp(-self.lambda230 * x2)) + (a234238 - 1) * (
                 self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                      1 - exp ** (-(self.lambda230 - self.lambda234) * x2))) - a230238
+                      1 - np.exp(-(self.lambda230 - self.lambda234) * x2))) - a230238
 
         if fl * fh >= 0:
             return "Out of range"
@@ -468,12 +466,12 @@ class Analyzer:
             dxold = abs(x2 - x1)
             dx = dxold
 
-            WERT = ((1 - exp ** (-self.lambda230 * t)) + (a234238 - 1) * (
+            WERT = ((1 - np.exp(-self.lambda230 * t)) + (a234238 - 1) * (
                     self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                            1 - exp ** (-(self.lambda230 - self.lambda234) * t))) - a230238
-            ABL = self.lambda230 * exp ** (-self.lambda230 * t) - (a234238 - 1) * (
+                            1 - np.exp(-(self.lambda230 - self.lambda234) * t))) - a230238
+            ABL = self.lambda230 * np.exp(-self.lambda230 * t) - (a234238 - 1) * (
                     self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                          -self.lambda230 + self.lambda234) * exp ** ((-self.lambda230 + self.lambda234) * t)
+                          -self.lambda230 + self.lambda234) * np.exp((-self.lambda230 + self.lambda234) * t)
 
             for i in range(100):
 
@@ -503,12 +501,12 @@ class Analyzer:
                 if abs(dx) < xacc:
                     return np.round(t / 1000, 4)
 
-                WERT = ((1 - exp ** (-self.lambda230 * t)) + (a234238 - 1) * (
+                WERT = ((1 - np.exp(-self.lambda230 * t)) + (a234238 - 1) * (
                         self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                                1 - exp ** (-(self.lambda230 - self.lambda234) * t))) - a230238
-                ABL = self.lambda230 * exp ** (-self.lambda230 * t) - (a234238 - 1) * (
+                                1 - np.exp(-(self.lambda230 - self.lambda234) * t))) - a230238
+                ABL = self.lambda230 * np.exp(-self.lambda230 * t) - (a234238 - 1) * (
                         self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                              -self.lambda230 + self.lambda234) * exp ** ((-self.lambda230 + self.lambda234) * t)
+                              -self.lambda230 + self.lambda234) * np.exp((-self.lambda230 + self.lambda234) * t)
 
                 if WERT < 0:
                     xl = t

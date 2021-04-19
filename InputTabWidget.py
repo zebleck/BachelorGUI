@@ -383,7 +383,7 @@ class InputTabWidget(QWidget):
 
         #hPlusTable
         self.factorsTable = QTableView()
-        emptyFactorsFrame = pd.DataFrame({'UhH+': '', 'ThH+': ''},
+        emptyFactorsFrame = pd.DataFrame({'UH+': '', 'ThH+': ''},
                                    index=['Factors'])
         self.factorsTable.setModel(DataFrameModel(emptyFactorsFrame))
         self.factorsTable.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
