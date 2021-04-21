@@ -70,9 +70,6 @@ class Window(QtWidgets.QMainWindow):
         self.ratioBuilder.set_path(path)
         self.ratioBuilder.set_constants(self.inputTab.get_constants())
         self.ratioBuilder.set_specific_constants(self.inputTab.get_specific_constants())
-        self.ratioBuilder.yhas_uranium()
-        self.ratioBuilder.yhas_thorium()
-        self.ratioBuilder.calc_blank_correction()
         self.ratioBuilder.data_correction()
 
     def startAnalysis(self, metadatapath):

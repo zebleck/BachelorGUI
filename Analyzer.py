@@ -77,7 +77,6 @@ class Analyzer:
         self.standardEinwaage = constants['standardEinwaage']
         self.standardTriSp13 = constants['standardTriSp13']
 
-
     def set_specific_constants(self, specific_constants):
         self.blk = specific_constants['Blank']
         self.yield_Th = specific_constants['Yield_Th']
@@ -142,19 +141,10 @@ class Analyzer:
                  'Mess. Dat.': [''], 'Tiefe': [''],
                  'Einwaage (g)': [self.standardEinwaage], 'TriSp13 (g)': [self.standardTriSp13]})
 
-
-        # get all valid laboratory numbers from the ratios dataframe (from the datafiles)
-        measurementLabNrs = re.split(r'\d+(?!\.)\D{1}', ''.join(list(ratios.iloc[:, 0])))[1:]
-        # remove ''
-        measurementLabNrs = [val for val in measurementLabNrs if val != '']
-
-        for i, nr in enumerate(measurementLabNrs):
-            if '.exp' in nr:
-                measurementLabNrs[i] = int(nr.replace('.exp', ''))
+        measurementLabNrs = DataFolderUtil.getLabNrsFromList(list(ratios.iloc[:, 0]))
 
         if measurementLabNrs[-1] != self.standard and self.standard is not None:
             measurementLabNrs.append(self.standard)
-
 
         '''
          build up measurement specific metadata dataframe
@@ -198,10 +188,9 @@ class Analyzer:
                                     'Blank 232 (ng)': blank232,
                                     'Ch. Blank 230 (fg)': chBlank230})
 
-
     def calc_concentrations(self, ratios):
         # Add additional row if last standard was not measured
-        if len(ratios.index)+1 == len(self.metadata.index):
+        if len(ratios.index) + 1 == len(self.metadata.index):
             ratios = ratios.append(ratios.iloc[-2], ignore_index=True)
 
         self.metadata.index = ratios.index
@@ -234,7 +223,8 @@ class Analyzer:
         a234238 = ratios['Ratio 234/238'] * self.lambda234 / self.lambda238
         a234238_err = a234238 * ratios['Error (%) 234/238'] / 100
         a234238_corr = [a234238[i] * 2 / (a234238[i - 1] + a234238[i + 1])
-                        if (0 < i < len(a234238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a234238[i] for i
+                        if (0 < i < len(a234238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a234238[i]
+                        for i
                         in range(len(a234238))]
         a234238_corr_err = a234238_corr * ratios['Error (%) 234/238'] / 100
 
@@ -258,12 +248,12 @@ class Analyzer:
         a230232 = th230dpmg / th232dpmg
         a230232_err = a230232 * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (th232ngg_err / th232ngg) ** 2)
 
-
         # a230238
         a230238 = th230dpmg / u238dpmg
         a230238_err = a230238 * np.sqrt((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2)
         a230238_corr = [a230238[i] * 2 / (a230238[i - 1] + a230238[i + 1])
-                        if (0 < i < len(a230238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a230238[i] for i
+                        if (0 < i < len(a230238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a230238[i]
+                        for i
                         in range(len(a230238))]
         a230238_corr_err = a230238_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
 
@@ -280,7 +270,8 @@ class Analyzer:
         age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
                     range(len(a230238_corr))]
 
-        age_uncorr_err = [self.montealter(a230238_corr[i], a230238_corr_err[i], a234238_corr[i], a234238_corr_err[i]) for i in
+        age_uncorr_err = [self.montealter(a230238_corr[i], a230238_corr_err[i], a234238_corr[i], a234238_corr_err[i])
+                          for i in
                           range(len(a230238))]
 
         age_uncorr_rel_err = [age_uncorr_err[i] / age_uncorr[i] * 100
@@ -341,7 +332,8 @@ class Analyzer:
         self.input = pd.concat([self.metadata, ratios], axis=1)
         self.input.drop(['dU234', 'Error dU234 (abs.)'], axis=1, inplace=True)
 
-        input_units = ['', '', '', '', '', '', '', '', '', '', 'gem.', '(%)', 'gem.', '(%)', 'gem.+korr.', '(%)', 'gem.', '(%)', 'gem.', '(%)', '', '(%)', '', '(%)', '', '(%)']
+        input_units = ['', '', '', '', '', '', '', '', '', '', 'gem.', '(%)', 'gem.', '(%)', 'gem.+korr.', '(%)',
+                       'gem.', '(%)', 'gem.', '(%)', '', '(%)', '', '(%)', '', '(%)']
         input_units_frame = pd.DataFrame(dict(zip(self.input.columns, input_units)), index=[''])
         self.input = pd.concat([self.input.iloc[:0], input_units_frame, self.input[0:]])
 
@@ -686,21 +678,21 @@ class Analyzer:
             return '/'
         else:
             return np.sqrt(((au * np.exp(-self.lambda230 * aw * 1000)) / (self.lambda230 * (
-                np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
+                    np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
                 -(self.lambda230 - self.lambda234) * aw * 1000)
-                - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * at ** 22 + (
-                (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
-                self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
-                             (aj / 1000) * np.exp(
-                -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
-                -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
-                (self.lambda230 / (self.lambda230 - self.lambda234))
-                * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
-                   self.lambda230 * (
-                   np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
+                    - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * at ** 22 + (
+                                   (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
+                                   self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
+                                                     (aj / 1000) * np.exp(
+                                       -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
+                                       -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
+                                   (self.lambda230 / (self.lambda230 - self.lambda234))
+                                   * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
+                                           self.lambda230 * (
+                                           np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
+                                       -(self.lambda230 - self.lambda234) * aw * 1000)
+                                           - as_ * au * np.exp(
+                                       -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
+                    self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
                 -(self.lambda230 - self.lambda234) * aw * 1000)
-                   - as_ * au * np.exp(
-                -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
-                self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                -(self.lambda230 - self.lambda234) * aw * 1000)
-                - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000
+                                      - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000

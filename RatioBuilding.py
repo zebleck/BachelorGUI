@@ -2,10 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 from pandas import ExcelWriter
-
 import scipy.interpolate
-
 import ExcelFormatter
+import DataFolderUtil
 
 
 class RatioBuilder:
@@ -537,8 +536,8 @@ class RatioBuilder:
         self.tail_mat = tail_mat
         self.tail_mat_cup = tail_mat_cup
 
-        RPQ_Norm_Uran = tail_mat * self.cps  # tailing normalized to 1 V signal
-        IC5_Norm_Uran = tail_mat_cup * self.cps
+        #RPQ_Norm_Uran = tail_mat * self.cps  # tailing normalized to 1 V signal
+        #IC5_Norm_Uran = tail_mat_cup * self.cps
 
     def thorium_tailing(self):
         rpq_factor_th = [52, 10]  # RPQon/RPQoff
@@ -638,7 +637,7 @@ class RatioBuilder:
                 datablkm[k, :] = datablk_mean
 
             blank = pd.DataFrame(
-                {'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2], 'U-236': datablkm[:, 3],
+                {'Lab. #': self.labNrs, 'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2], 'U-236': datablkm[:, 3],
                  'U-238': datablkm[:, 4], 'Th-230': datablkm[:, 5], 'Th-232': datablkm[:, 6], 'Th-229': datablkm[:, 7]},
                 index=names_blank)
             writer = ExcelWriter(self.data_root_folder + '\\PrBlank.xlsx', engine='xlsxwriter')
@@ -648,7 +647,7 @@ class RatioBuilder:
         else:
             datablkm[:, :] = 0
             blank = pd.DataFrame(
-                {'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2], 'U-236': datablkm[:, 3],
+                {'Lab. #': self.labNrs, 'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2], 'U-236': datablkm[:, 3],
                  'U-238': datablkm[:, 4], 'Th-230': datablkm[:, 5], 'Th-232': datablkm[:, 6], 'Th-229': datablkm[:, 7]},
                 index=names_blank)
             writer = ExcelWriter(self.data_root_folder + '\\PrBlank.xlsx', engine='xlsxwriter')
@@ -660,11 +659,19 @@ class RatioBuilder:
         os.chdir(old_path)
 
     def data_correction(self):
+
         old_path = os.getcwd()
 
-        folder_data = self.data_root_folder + '\\data'
+        folder_data = os.path.join(self.data_root_folder, 'data')
         list_data = os.listdir(folder_data)
         names_data = np.sort(np.array(list_data))
+
+        # get the laboratory numbers from the data filenames
+        self.labNrs = DataFolderUtil.getLabNrsFromList(names_data)
+
+        self.yhas_uranium()
+        self.yhas_thorium()
+        self.calc_blank_correction()
 
         # standard = DataFolderUtil.findStandardNumber(self.data_root_folder)
 
@@ -764,7 +771,7 @@ class RatioBuilder:
 
         # os.remove(data_root_folder + '\\Ratios_python.xlsx')
 
-        datacorr = pd.DataFrame({'dU234': (matrix_ratios[:, 10] * self.lambda234 / self.lambda238 - 1) * 1000,
+        self.ratios = pd.DataFrame({'dU234': (matrix_ratios[:, 10] * self.lambda234 / self.lambda238 - 1) * 1000,
                                  'Error dU234 (abs.)': (matrix_ratios[:,
                                                         10] * self.lambda234 / self.lambda238) * matrix_ratios[:,
                                                                                                  11] / 100,
@@ -779,7 +786,8 @@ class RatioBuilder:
                                  'Ratio 230/232': matrix_ratios[:, 16], 'Error (%) 230/232': matrix_ratios[:, 17]},
                                 index=names_data)
 
-        self.ratios = datacorr
+        datacorr = self.ratios.copy()
+        datacorr.insert(0, 'Lab. #', self.labNrs)
 
         writer = ExcelWriter(self.data_root_folder + '\\Ratios.xlsx', engine='xlsxwriter')
         ExcelFormatter.format(writer, {'Ratios': datacorr})
@@ -787,7 +795,8 @@ class RatioBuilder:
 
         # os.remove(data_root_folder + '\\Ratios_python_add.xlsx')
         datacorr_add = pd.DataFrame(
-            {'Ratio 233/236': matrix_ratios_add[:, 0], 'Error (%) 233/236': matrix_ratios_add[:, 1],
+            {'Lab. #': self.labNrs,
+             'Ratio 233/236': matrix_ratios_add[:, 0], 'Error (%) 233/236': matrix_ratios_add[:, 1],
              'Ratio 235/238': matrix_ratios_add[:, 2], 'Error (%) 235/238': matrix_ratios_add[:, 3],
              'Ratio 235/236': matrix_ratios_add[:, 4], 'Error (%) 235/236': matrix_ratios_add[:, 5],
              'Ratio 234/233': matrix_ratios_add[:, 6], 'Error (%) 234/233': matrix_ratios_add[:, 7],

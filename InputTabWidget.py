@@ -444,19 +444,20 @@ class InputTabWidget(QWidget):
 
     def fillTailingTables(self):
         uTailData = pd.DataFrame(
-            {'229': self.ratioBuilder.tail_mat[0],
-             '230': self.ratioBuilder.tail_mat[1],
-             '232': self.ratioBuilder.tail_mat[2],
-             '233': self.ratioBuilder.tail_mat[3],
-             '234': self.ratioBuilder.tail_mat[4],
-             '235': self.ratioBuilder.tail_mat[5],
-             '236': self.ratioBuilder.tail_mat[6],
-             '237': self.ratioBuilder.tail_mat[7]},
+            {'229': [self.ratioBuilder.tail_mat[0], self.ratioBuilder.tail_mat_cup[0]],
+             '230': [self.ratioBuilder.tail_mat[1], self.ratioBuilder.tail_mat_cup[1]],
+             '232': [self.ratioBuilder.tail_mat[2], self.ratioBuilder.tail_mat_cup[2]],
+             '233': [self.ratioBuilder.tail_mat[3], self.ratioBuilder.tail_mat_cup[3]],
+             '234': [self.ratioBuilder.tail_mat[4], self.ratioBuilder.tail_mat_cup[4]],
+             '235': [self.ratioBuilder.tail_mat[5], self.ratioBuilder.tail_mat_cup[5]],
+             '236': [self.ratioBuilder.tail_mat[6], self.ratioBuilder.tail_mat_cup[6]],
+             '237': [self.ratioBuilder.tail_mat[7], self.ratioBuilder.tail_mat_cup[7]],},
             index=['Tailing U SEM', 'Tailing U Cup'])
         self.uTailTable.setModel(DataFrameModel(uTailData))
         self.uTailTable.resizeColumnsToContents()
 
-        thTailData = pd.DataFrame({'229': self.ratioBuilder.tail_mat_th[0], '230': self.ratioBuilder.tail_mat_th[1]},
+        thTailData = pd.DataFrame({'229': [self.ratioBuilder.tail_mat_th[0], self.ratioBuilder.tail_mat_th_cup[0]],
+                                   '230': [self.ratioBuilder.tail_mat_th[1], self.ratioBuilder.tail_mat_th_cup[1]]},
                                 index=['Tailing Th SEM', 'Tailing Th Cup'])
         self.thTailTable.setModel(DataFrameModel(thTailData))
         self.thTailTable.resizeColumnsToContents()
