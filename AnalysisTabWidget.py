@@ -79,7 +79,6 @@ class AnalysisTabWidget(QLabel):
             elif os.path.isfile(entrypath) and entry.endswith('.xlsx') and 'Wägeprotokoll' in entry:
                 self.metadataFileEdit.setText(os.path.normpath(entrypath))
                 return
-        self.metadataFileEdit.setText('')
 
     def createMetadata(self):
         dialog = MetadataDialog(self, folderPath=self.currentRatiosFolder)

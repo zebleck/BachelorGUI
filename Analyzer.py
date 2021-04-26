@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
-import re
 
 from pandas import ExcelWriter
 
 import DataFolderUtil
 from random import random
+import Util
 
 import ExcelFormatter
 
@@ -17,8 +17,6 @@ class Analyzer:
     def set_path(self, path):
         self.data_root_folder = path
         self.standard = DataFolderUtil.findStandardNumber(path)
-        if self.standard is not None:
-            self.standard = int(self.standard)
 
     def set_constants(self, constants):
         self.constantsType = constants['type']
@@ -109,7 +107,7 @@ class Analyzer:
                     elif 'mm' in fullMetadata.iloc[idx, 4]:
                         self.tiefe_unit = 'mm'
                 try:
-                    labnr = int(fullMetadata.iloc[idx, 0])
+                    labnr = fullMetadata.iloc[idx, 0]
                     metadata_dict['Lab. #'].append(labnr)
                     metadata_dict['Bezeich.'].append(fullMetadata.iloc[idx, 1])
                     metadata_dict['Art der Probe'].append(fullMetadata.iloc[idx, 2])
@@ -164,7 +162,7 @@ class Analyzer:
                 metadata_dict['Einwaage (g)'].append(standardRow.iloc[0]['Einwaage (g)'])
                 metadata_dict['TriSp13 (g)'].append(standardRow.iloc[0]['TriSp13 (g)'])
             else:
-                labnr_row = fullMetadata[fullMetadata['Lab. #'] == labnr]
+                labnr_row = fullMetadata[fullMetadata['Lab. #'].astype(str) == labnr]
                 metadata_dict['Lab. #'].append(labnr)
                 metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
                 metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
@@ -173,6 +171,10 @@ class Analyzer:
                 metadata_dict['Einwaage (g)'].append(labnr_row.iloc[0]['Einwaage (g)'])
                 metadata_dict['TriSp13 (g)'].append(labnr_row.iloc[0]['TriSp13 (g)'])
 
+        # Convert laboratory numbers to int if possible
+        metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
+
+        # Create dataframe
         self.metadata = pd.DataFrame(metadata_dict)
 
         # Set blanks
@@ -223,7 +225,7 @@ class Analyzer:
         a234238 = ratios['Ratio 234/238'] * self.lambda234 / self.lambda238
         a234238_err = a234238 * ratios['Error (%) 234/238'] / 100
         a234238_corr = [a234238[i] * 2 / (a234238[i - 1] + a234238[i + 1])
-                        if (0 < i < len(a234238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a234238[i]
+                        if (0 < i < len(a234238) - 1 and self.standard not in ratios.iloc[i, 0]) else a234238[i]
                         for i
                         in range(len(a234238))]
         a234238_corr_err = a234238_corr * ratios['Error (%) 234/238'] / 100
@@ -252,7 +254,7 @@ class Analyzer:
         a230238 = th230dpmg / u238dpmg
         a230238_err = a230238 * np.sqrt((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2)
         a230238_corr = [a230238[i] * 2 / (a230238[i - 1] + a230238[i + 1])
-                        if (0 < i < len(a230238) - 1 and str(self.standard) not in ratios.iloc[i, 0]) else a230238[i]
+                        if (0 < i < len(a230238) - 1 and self.standard not in ratios.iloc[i, 0]) else a230238[i]
                         for i
                         in range(len(a230238))]
         a230238_corr_err = a230238_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)

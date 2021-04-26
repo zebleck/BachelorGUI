@@ -58,14 +58,14 @@ def findStandardNumber(path):
         return max(set(data), key=data.count)
 
 def getLabNrsFromList(filenameList):
-    labNrs = re.split(r'\d+(?!\.)\D{1}', ''.join(filenameList))[1:]
+    labNrs = re.split(r'\d+(?!\.|\-)\D', ''.join(filenameList))[1:]
     # remove ''
     labNrs = [val for val in labNrs if val != '']
 
     # remove '.exp'
     for i, nr in enumerate(labNrs):
         if '.exp' in nr:
-            labNrs[i] = int(nr.replace('.exp', ''))
+            labNrs[i] = nr.replace('.exp', '')
     return labNrs
 
 def createDataFolders(path):

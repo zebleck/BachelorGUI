@@ -5,6 +5,7 @@ from pandas import ExcelWriter
 import scipy.interpolate
 import ExcelFormatter
 import DataFolderUtil
+import Util
 
 
 class RatioBuilder:
@@ -667,7 +668,7 @@ class RatioBuilder:
         names_data = np.sort(np.array(list_data))
 
         # get the laboratory numbers from the data filenames
-        self.labNrs = DataFolderUtil.getLabNrsFromList(names_data)
+        self.labNrs = Util.try_convert_to_int(DataFolderUtil.getLabNrsFromList(names_data))
 
         self.yhas_uranium()
         self.yhas_thorium()
