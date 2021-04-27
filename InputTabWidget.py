@@ -296,7 +296,6 @@ class InputTabWidget(QWidget):
         return specific
 
     def get_constants(self):
-        constants = {}
         path = self.constantsFileEdit.text()
         with open(self.constantsFileEdit.text(), 'r') as file:
             constants = json.loads(file.read().replace('\n', ''))
@@ -411,7 +410,7 @@ class InputTabWidget(QWidget):
         self.thTailGraph.setYRange(0, MathUtil.interp(100, np.max(self.interp_th_tail), norm_value))
 
     def addRatios(self):
-        self.addRatiosToTable(self.ratioBuilder.ratios)
+        self.addRatiosToTable(self.ratioBuilder.ratios.copy())
         self.fillTailingTables()
 
         self.plot()

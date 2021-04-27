@@ -83,8 +83,6 @@ class Analyzer:
         self.tailShift = specific_constants['Tail shift']
 
     def set_metadata(self, metadata_path, ratios):
-        standardRow = None
-
         '''
          build up full metadata file, either from .csv or .xlsx files
         '''
@@ -139,7 +137,7 @@ class Analyzer:
                  'Mess. Dat.': [''], 'Tiefe': [''],
                  'Einwaage (g)': [self.standardEinwaage], 'TriSp13 (g)': [self.standardTriSp13]})
 
-        measurementLabNrs = DataFolderUtil.getLabNrsFromList(list(ratios.iloc[:, 0]))
+        measurementLabNrs = DataFolderUtil.getLabNrsFromList(list(ratios.index))
 
         if measurementLabNrs[-1] != self.standard and self.standard is not None:
             measurementLabNrs.append(self.standard)
@@ -162,7 +160,9 @@ class Analyzer:
                 metadata_dict['Einwaage (g)'].append(standardRow.iloc[0]['Einwaage (g)'])
                 metadata_dict['TriSp13 (g)'].append(standardRow.iloc[0]['TriSp13 (g)'])
             else:
+
                 labnr_row = fullMetadata[fullMetadata['Lab. #'].astype(str) == labnr]
+
                 metadata_dict['Lab. #'].append(labnr)
                 metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
                 metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
@@ -175,7 +175,7 @@ class Analyzer:
         metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
 
         # Create dataframe
-        self.metadata = pd.DataFrame(metadata_dict)
+        self.metadata = pd.DataFrame(metadata_dict, index=ratios.index)
 
         # Set blanks
 
@@ -188,14 +188,13 @@ class Analyzer:
         self.blanks = pd.DataFrame({'Blank 234 (fg)': blank234,
                                     'Blank 238 (ng)': blank238,
                                     'Blank 232 (ng)': blank232,
-                                    'Ch. Blank 230 (fg)': chBlank230})
+                                    'Ch. Blank 230 (fg)': chBlank230}, index=ratios.index)
 
     def calc_concentrations(self, ratios):
+        ratios = ratios.copy()
         # Add additional row if last standard was not measured
         if len(ratios.index) + 1 == len(self.metadata.index):
             ratios = ratios.append(ratios.iloc[-2], ignore_index=True)
-
-        self.metadata.index = ratios.index
 
         # Ratio 234/233
         r234233_err = ratios['Ratio 234/233'] * ratios['Error (%) 234/233'] / 100
@@ -205,7 +204,6 @@ class Analyzer:
         r238236 = ratios['Ratio 235/236'] * self.NR85
         r238236_err = r238236 * ratios['Error (%) 235/238'] / 100
 
-        # print(ratios)
         # 234U
         u234pgg = ((ratios['Ratio 234/233'] * self.tri233 * 10 ** -9 * self.metadata['TriSp13 (g)'] * (
                 234.0409521 / 233.0396352)) -
@@ -225,7 +223,7 @@ class Analyzer:
         a234238 = ratios['Ratio 234/238'] * self.lambda234 / self.lambda238
         a234238_err = a234238 * ratios['Error (%) 234/238'] / 100
         a234238_corr = [a234238[i] * 2 / (a234238[i - 1] + a234238[i + 1])
-                        if (0 < i < len(a234238) - 1 and self.standard not in ratios.iloc[i, 0]) else a234238[i]
+                        if (0 < i < len(a234238) - 1 and self.standard is not None and self.standard not in ratios.index[i]) else a234238[i]
                         for i
                         in range(len(a234238))]
         a234238_corr_err = a234238_corr * ratios['Error (%) 234/238'] / 100
@@ -234,6 +232,7 @@ class Analyzer:
         th232ngg = ((self.tri229 * 10 ** -9 * self.metadata['TriSp13 (g)'] * (232.0380553 / 229.031762) / ratios[
             'Ratio 229/232']) -
                     (self.blanks['Blank 232 (ng)'] * 10 ** -9)) * 10 ** 9 / self.metadata['Einwaage (g)']
+
         th232ngg_err = th232ngg * ratios['Error (%) 229/232'] / 100
         th232dpmg = (th232ngg / 232.0380553) * self.NA * 10 ** -9 * self.lambda232 / (365.2425 * 24 * 60)
         th232dpmg_err = th232dpmg * ratios['Error (%) 229/232'] / 100
@@ -254,7 +253,7 @@ class Analyzer:
         a230238 = th230dpmg / u238dpmg
         a230238_err = a230238 * np.sqrt((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2)
         a230238_corr = [a230238[i] * 2 / (a230238[i - 1] + a230238[i + 1])
-                        if (0 < i < len(a230238) - 1 and self.standard not in ratios.iloc[i, 0]) else a230238[i]
+                        if (0 < i < len(a230238) - 1 and self.standard is not None and self.standard not in ratios.index[i]) else a230238[i]
                         for i
                         in range(len(a230238))]
         a230238_corr_err = a230238_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
@@ -409,7 +408,7 @@ class Analyzer:
             'd234U (initial)': list(d234U_init), 'Fehler8': list(d234U_init_err),
             'Tiefe': list(self.metadata['Tiefe'])
         },
-            index=ratios.iloc[:, 0])
+            index=ratios.index)
 
         results_units = pd.DataFrame({'Lab. #': '', 'Bezeich.': '',
                                       '238U': u238unit, 'Fehler1': '(abso.)',

@@ -816,8 +816,6 @@ class RatioBuilder:
 
         os.chdir(old_path)
 
-        return datacorr
-
     def outliertest(self, X):
         smaller = np.mean(X) + 2 * np.std(X, ddof=1)
         larger = np.mean(X) - 2 * np.std(X, ddof=1)
