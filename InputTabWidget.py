@@ -225,10 +225,10 @@ class InputTabWidget(QWidget):
             return
 
         path = os.path.normpath(path)
-        self.dirNameEdit.setText(path)
-        self.filesList.clear()
-
-        self.setFilesBox(path)
+        if path != self.dirNameEdit.text():
+            self.dirNameEdit.setText(path)
+            self.setFilesBox(path)
+            self.clear()
 
     def setFilesBox(self, path):
         self.filesList.clear()
@@ -295,18 +295,8 @@ class InputTabWidget(QWidget):
         }
         return specific
 
-    def get_constants(self):
-        path = self.constantsFileEdit.text()
-        with open(self.constantsFileEdit.text(), 'r') as file:
-            constants = json.loads(file.read().replace('\n', ''))
-        fileName = Util.path_leaf(path)
-        if 'coral' in fileName:
-            constants['type'] = 'coral'
-        elif 'stalag' in fileName:
-            constants['type'] = 'stalag'
-        else:
-            constants['type'] = 'stalag'
-        return constants
+    def get_constants_path(self):
+        return self.constantsFileEdit.text()
 
     ''' +-----------------------------+ '''
     ''' |       Overview-Code         | '''
@@ -365,29 +355,24 @@ class InputTabWidget(QWidget):
 
         #uTailTable
         self.uTailTable = QTableView()
-        emptyUTailFrame = pd.DataFrame({'229': '', '230': '', '230': '', '231': '', '232': '', '233': '', '234': '', '235': '', '236': '', '237': ''},
-                                        index=['Tailing U SEM', 'Tailing U Cup'])
-        self.uTailTable.setModel(DataFrameModel(emptyUTailFrame))
         self.uTailTable.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.uTailTable.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
         self.uTailTable.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
 
         #uThTailTable
         self.thTailTable = QTableView()
-        emptyThTailFrame = pd.DataFrame({'229': '', '230': ''}, index=['Tailing Th SEM', 'Tailing Th Cup'])
-        self.thTailTable.setModel(DataFrameModel(emptyThTailFrame))
         self.thTailTable.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.thTailTable.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
         self.thTailTable.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
 
         #hPlusTable
         self.factorsTable = QTableView()
-        emptyFactorsFrame = pd.DataFrame({'UH+': '', 'ThH+': ''},
-                                   index=['Factors'])
-        self.factorsTable.setModel(DataFrameModel(emptyFactorsFrame))
+
         self.factorsTable.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.factorsTable.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
         self.factorsTable.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
+
+        self.setEmptyOverviewTables()
 
         layout = QGridLayout()
         layout.addWidget(self.uTailGraph, 0, 0, 3, 1)
@@ -400,6 +385,18 @@ class InputTabWidget(QWidget):
         #layout.addItem(QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding), 0, 5, 3, 1)
 
         self.overviewBox.setLayout(layout)
+
+    def setEmptyOverviewTables(self):
+        emptyUTailFrame = pd.DataFrame(
+            {'229': '', '230': '', '230': '', '231': '', '232': '', '233': '', '234': '', '235': '', '236': '',
+             '237': ''},
+            index=['Tailing U SEM', 'Tailing U Cup'])
+        self.uTailTable.setModel(DataFrameModel(emptyUTailFrame))
+        emptyThTailFrame = pd.DataFrame({'229': '', '230': ''}, index=['Tailing Th SEM', 'Tailing Th Cup'])
+        self.thTailTable.setModel(DataFrameModel(emptyThTailFrame))
+        emptyFactorsFrame = pd.DataFrame({'UH+': '', 'ThH+': ''},
+                                         index=['Factors'])
+        self.factorsTable.setModel(DataFrameModel(emptyFactorsFrame))
 
     def setUGraphRange(self, value):
         norm_value = value/100/0.99
@@ -485,3 +482,14 @@ class InputTabWidget(QWidget):
         model = DataFrameModel(ratios, DataFolderUtil.findStandardNumber(self.dirNameEdit.text()))
         self.ratiosTable.setModel(model)
         self.ratiosTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    def clear(self):
+        self.filesList.clear()
+        self.uTailGraph.clear()
+        self.thTailGraph.clear()
+        self.u_ySlider.setEnabled(False)
+        self.th_ySlider.setEnabled(False)
+        self.u_ySlider.setValue(100)
+        self.th_ySlider.setValue(100)
+        self.ratiosTable.setModel(None)
+        self.setEmptyOverviewTables()

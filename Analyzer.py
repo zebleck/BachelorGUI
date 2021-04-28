@@ -139,8 +139,10 @@ class Analyzer:
 
         measurementLabNrs = DataFolderUtil.getLabNrsFromList(list(ratios.index))
 
+        indices = list(ratios.index)
         if measurementLabNrs[-1] != self.standard and self.standard is not None:
             measurementLabNrs.append(self.standard)
+            indices.append(indices[-2])
 
         '''
          build up measurement specific metadata dataframe
@@ -174,8 +176,9 @@ class Analyzer:
         # Convert laboratory numbers to int if possible
         metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
 
+
         # Create dataframe
-        self.metadata = pd.DataFrame(metadata_dict, index=ratios.index)
+        self.metadata = pd.DataFrame(metadata_dict, index=indices)
 
         # Set blanks
 
@@ -188,13 +191,13 @@ class Analyzer:
         self.blanks = pd.DataFrame({'Blank 234 (fg)': blank234,
                                     'Blank 238 (ng)': blank238,
                                     'Blank 232 (ng)': blank232,
-                                    'Ch. Blank 230 (fg)': chBlank230}, index=ratios.index)
+                                    'Ch. Blank 230 (fg)': chBlank230}, index=indices)
 
     def calc_concentrations(self, ratios):
         ratios = ratios.copy()
         # Add additional row if last standard was not measured
         if len(ratios.index) + 1 == len(self.metadata.index):
-            ratios = ratios.append(ratios.iloc[-2], ignore_index=True)
+            ratios = ratios.append(ratios.iloc[-2], ignore_index=False)
 
         # Ratio 234/233
         r234233_err = ratios['Ratio 234/233'] * ratios['Error (%) 234/233'] / 100
@@ -329,7 +332,6 @@ class Analyzer:
                      range(len(age_corr))]
 
         # Create input sheet dataframe
-
         self.input = pd.concat([self.metadata, ratios], axis=1)
         self.input.drop(['dU234', 'Error dU234 (abs.)'], axis=1, inplace=True)
 
@@ -339,7 +341,6 @@ class Analyzer:
         self.input = pd.concat([self.input.iloc[:0], input_units_frame, self.input[0:]])
 
         # Create calc sheet dataframe
-
         self.calc = pd.DataFrame({
             'Lab. #': list(self.metadata['Lab. #']), 'Bezeich.': list(self.metadata['Bezeich.']),
             '244/233U': list(ratios['Ratio 234/233']), 'Fehler1': list(r234233_err),
@@ -423,8 +424,53 @@ class Analyzer:
 
         self.results = pd.concat([self.results.iloc[:0], results_units, self.results[0:]])
 
+        # Prepare dataframe for constants sheet
+        dfConstants = pd.DataFrame({
+            'R34_33': self.R34_33,
+            'R35_33': self.R35_33,
+            'R30_29': self.R30_29,
+            'mf48': self.mf48,
+            'mf36': self.mf36,
+            'mf56': self.mf56,
+            'mf68': self.mf68,
+            'mf92': self.mf92,
+            'mf38': self.mf38,
+            'mf35': self.mf35,
+            'mf43': self.mf43,
+            'mf45': self.mf45,
+            'mf09': self.mf09,
+            'mf29': self.mf29,
+            'mf34': self.mf34,
+            'mf58': self.mf58,
+            'mf02': self.mf02,
+            'NA': self.NA,
+            'NR85': self.NR85,
+            'cps': self.cps,
+            'slope229Correction': self.slope229Correction,
+            'lambda232': self.lambda232,
+            'lambda234': self.lambda234,
+            'lambda238': self.lambda238,
+            'lambda230': self.lambda230,
+            'trisp236': self.tri236,
+            'trisp233': self.tri233,
+            'trisp229': self.tri229,
+            'blank234': self.blank234,
+            'blank234S': self.blank234S,
+            'blank238': self.blank238,
+            'blank238S': self.blank238S,
+            'blank232': self.blank232,
+            'blank232S': self.blank232S,
+            'chBlank230': self.chBlank230,
+            'chBlank230S': self.chBlank230S,
+            'a230232_init': self.a230232_init,
+            'a230232_init_err': self.a230232_init_err
+        }, index=[''])
+        dfConstants = dfConstants.transpose()
+        dfConstants.reset_index(level=0, inplace=True)
+
+        # Write Results file
         writer = ExcelWriter(self.data_root_folder + '\\Results.xlsx', engine='xlsxwriter')
-        ExcelFormatter.format(writer, {'Input': self.input, 'Calc': self.calc, 'Results': self.results})
+        ExcelFormatter.format(writer, {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants})
         writer.save()
 
     def thu_alter_kombi(self, a230238, a234238):

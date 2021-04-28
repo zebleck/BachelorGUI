@@ -1,7 +1,22 @@
 import ntpath
+import json
+import pandas as pd
 
 
-def get_standard_number(df):
+def load_constants(path):
+    with open(path, 'r') as file:
+        constants = json.loads(file.read().replace('\n', ''))
+    fileName = path_leaf(path)
+    if 'coral' in fileName:
+        constants['type'] = 'coral'
+    elif 'stalag' in fileName:
+        constants['type'] = 'stalag'
+    else:
+        constants['type'] = 'stalag'
+    return constants
+
+
+def get_standard_number_from_df(df):
     if 'Lab. #' in df:
         data = list(df['Lab. #'])
     elif 'Lab.Nr.' in df:
@@ -16,7 +31,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-def maybeMakeNumber(s):
+def maybe_make_number(s):
     """Returns a string 's' into a integer if possible, a float if needed or
     returns it as is.
     Used to convert lab numbers from string to int but handle exceptions (like '9799-4')"""
@@ -33,4 +48,4 @@ def maybeMakeNumber(s):
 
 
 def try_convert_to_int(l):
-    return list(map(maybeMakeNumber, l))
+    return list(map(maybe_make_number, l))

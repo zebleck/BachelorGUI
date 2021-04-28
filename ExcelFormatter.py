@@ -8,61 +8,77 @@ def format(writer, dfs):
     # remove the index by setting the kwarg 'index' to False
     # df.to_excel(excel_writer=writer, sheet_name='Sheet1', index=False)
 
+    header_format = writer.book.add_format({'bold': True, 'align': 'center', 'border': 0})
+    constants_header_format = writer.book.add_format({'bold': True, 'align': 'right', 'left': 1, 'top': 1, 'bottom': 1, 'right': 1, 'bg_color': '#ddb310'})
+    constants_content_format = writer.book.add_format({'align': 'left', 'right': 1, 'top': 1, 'bottom': 1, 'bg_color': '#DCDCDC'})
+    bottom_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'bottom': 6})
+    standard_format = writer.book.add_format({'bg_color': '#d8e4bc'})
+    superscript = writer.book.add_format({'bold': True, 'font_script': 1})
+    subscript = writer.book.add_format({'bold': True, 'font_script': 2})
+
     for sheetname, df in dfs.items():  # loop through `dict` of dataframes
-        df.to_excel(writer, sheet_name=sheetname, index=False)  # send df to writer
-        worksheet = writer.sheets[sheetname]  # pull worksheet object
+        if sheetname == 'Constants':
+            df.to_excel(writer, sheet_name=sheetname, index=False, header=False)
+            worksheet = writer.sheets[sheetname]
 
-        standard = Util.get_standard_number(df)
+            worksheet.set_column(0, 0, None, constants_header_format)
+            worksheet.set_column(1, 1, None, constants_content_format)
 
-        header_format = writer.book.add_format({'bold': True, 'align': 'center', 'border': 0})
-        bottom_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'bottom': 6})
-        #non_standard_format = writer.book.add_format({'num_format': '0,0###########'})
-        standard_format = writer.book.add_format({'bg_color': '#d8e4bc'})
-        superscript = writer.book.add_format({'bold': True, 'font_script': 1})
-        subscript = writer.book.add_format({'bold': True, 'font_script': 2})
+            for idx, col in enumerate(df.columns):  # loop through all columns
+                series = df[col]
+                max_len = max((
+                    series.astype(str).str.len().max(),  # len of largest item
+                    len(str(series.name))  # len of column name/header
+                )) + 1  # adding a little extra space
+                worksheet.set_column(idx, idx, max_len)  # set column width
+        else:
+            df.to_excel(writer, sheet_name=sheetname, index=False)  # send df to writer
+            worksheet = writer.sheets[sheetname]  # pull worksheet object
 
-        # Set standard row color
-        if standard is not None and ('Lab. #' in df or 'Lab.Nr.' in dfs):
-            labnrs = list(df['Lab. #'] if 'Lab. #' in df else df['Lab.Nr.'])
-            for i in range(len(labnrs)):
-                if labnrs[i] == standard:
-                    worksheet.set_row(i+1, None, standard_format)
+            standard = Util.get_standard_number_from_df(df)
 
-        # Set header formats
-        if sheetname == 'Input' or sheetname == 'Results' or sheetname == 'Calc':
-            worksheet.set_row(0, None, header_format)
-            worksheet.set_row(1, None, bottom_border_format)
+            # Set standard row color
+            if standard is not None and ('Lab. #' in df or 'Lab.Nr.' in dfs):
+                labnrs = list(df['Lab. #'] if 'Lab. #' in df else df['Lab.Nr.'])
+                for i in range(len(labnrs)):
+                    if labnrs[i] == standard:
+                        worksheet.set_row(i+1, None, standard_format)
 
-        for idx, col in enumerate(df.columns):  # loop through all columns
-            series = df[col]
-            max_len = max((
-                series.astype(str).str.len().max(),  # len of largest item
-                len(str(series.name))  # len of column name/header
-            )) + 1  # adding a little extra space
-            worksheet.set_column(idx, idx, max_len)  # set column width
+            # Set header formats
+            if sheetname == 'Input' or sheetname == 'Results' or sheetname == 'Calc':
+                worksheet.set_row(0, None, header_format)
+                worksheet.set_row(1, None, bottom_border_format)
 
-            if re.match(r"Fehler[0-9]+", col):
-                worksheet.write(0, idx, u'Fehler 2σ')
-            else:
-                worksheet.write(0, idx, col)
+            for idx, col in enumerate(df.columns):  # loop through all columns
+                series = df[col]
+                max_len = max((
+                    series.astype(str).str.len().max(),  # len of largest item
+                    len(str(series.name))  # len of column name/header
+                )) + 1  # adding a little extra space
+                worksheet.set_column(idx, idx, max_len)  # set column width
 
-            if re.match(r"234U[0-9]", col):
-                worksheet.write(0, idx, '234U')
-            if re.match(r"238U[0-9]", col):
-                worksheet.write(0, idx, '238U')
-            if re.match(r"232Th[0-9]", col):
-                worksheet.write(0, idx, '232Th')
-            if re.match(r"230Th[0-9]", col):
-                worksheet.write(0, idx, '230Th')
+                if col != '' and re.match(r"Fehler[0-9]+", str(col)):
+                    worksheet.write(0, idx, u'Fehler 2σ')
+                else:
+                    worksheet.write(0, idx, col)
 
-            for row, value in enumerate(df[col]):
-                if 'o/oo' in str(value):
-                    string_split = str(value).split('o/oo')
-                    worksheet.write_rich_string(row+1, idx, string_split[0],
-                                                superscript, 'o',
-                                                '/',
-                                                subscript, 'oo',
-                                                string_split[1])
+                if re.match(r"234U[0-9]", str(col)):
+                    worksheet.write(0, idx, '234U')
+                if re.match(r"238U[0-9]", str(col)):
+                    worksheet.write(0, idx, '238U')
+                if re.match(r"232Th[0-9]", str(col)):
+                    worksheet.write(0, idx, '232Th')
+                if re.match(r"230Th[0-9]", str(col)):
+                    worksheet.write(0, idx, '230Th')
+
+                for row, value in enumerate(df[col]):
+                    if 'o/oo' in str(value):
+                        string_split = str(value).split('o/oo')
+                        worksheet.write_rich_string(row+1, idx, string_split[0],
+                                                    superscript, 'o',
+                                                    '/',
+                                                    subscript, 'oo',
+                                                    string_split[1])
 
 
     '''

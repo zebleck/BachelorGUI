@@ -10,6 +10,7 @@ from AnalysisTabWidget import AnalysisTabWidget
 
 from RatioBuilding import RatioBuilder
 import DataFolderUtil
+import Util
 import warnings
 
 
@@ -68,13 +69,15 @@ class Window(QtWidgets.QMainWindow):
         DataFolderUtil.createDataFolders(path)
         DataFolderUtil.removeUnnecessaryFiles(path)
         self.ratioBuilder.set_path(path)
-        self.ratioBuilder.set_constants(self.inputTab.get_constants())
+        constants = Util.load_constants(self.inputTab.get_constants_path())
+        self.ratioBuilder.set_constants(constants)
         self.ratioBuilder.set_specific_constants(self.inputTab.get_specific_constants())
         self.ratioBuilder.data_correction()
 
     def startAnalysis(self, metadatapath):
         self.analyzer.set_path(self.ratioBuilder.data_root_folder)
-        self.analyzer.set_constants(self.inputTab.get_constants())
+        constants = Util.load_constants(self.inputTab.get_constants_path())
+        self.analyzer.set_constants(constants)
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
         self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
         self.analysisTab.display()
