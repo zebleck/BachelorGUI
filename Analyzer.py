@@ -13,6 +13,8 @@ import ExcelFormatter
 class Analyzer:
     def __init__(self):
         self.data_root_folder = None
+        self.calculate_age_errors = True
+        self.write_results_file = True
 
     def set_path(self, path):
         self.data_root_folder = path
@@ -193,8 +195,9 @@ class Analyzer:
                                     'Blank 232 (ng)': blank232,
                                     'Ch. Blank 230 (fg)': chBlank230}, index=indices)
 
-    def calc_concentrations(self, ratios):
+    def calc_concentrations(self, ratios, filename='Results'):
         ratios = ratios.copy()
+
         # Add additional row if last standard was not measured
         if len(ratios.index) + 1 == len(self.metadata.index):
             ratios = ratios.append(ratios.iloc[-2], ignore_index=False)
@@ -267,33 +270,40 @@ class Analyzer:
 
         # Ages
 
-        self.specific_number = None
-
+        # uncorrected Ages
         age_uncorr = [self.thu_alter_kombi(a230238_corr[i], a234238_corr[i]) for i in range(len(a230238_corr))]
 
+        # corrected Ages
         age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
                     range(len(a230238_corr))]
 
-        age_uncorr_err = [self.montealter(a230238_corr[i], a230238_corr_err[i], a234238_corr[i], a234238_corr_err[i])
-                          for i in
-                          range(len(a230238))]
-
-        age_uncorr_rel_err = [age_uncorr_err[i] / age_uncorr[i] * 100
-                              if age_uncorr[i] != 'Out of range' and age_uncorr_err[i] != '/' else '/' for i in
+        # Age errors
+        if self.calculate_age_errors:
+            age_uncorr_err = [self.montealter(a230238_corr[i], a230238_corr_err[i], a234238_corr[i], a234238_corr_err[i])
+                              for i in
                               range(len(age_uncorr))]
 
-        age_corr_err = [self.marincorr_age_error(a230238_corr[i],
-                                                 a230238_corr_err[i],
-                                                 a234238_corr[i],
-                                                 a234238_corr_err[i],
-                                                 a232238[i],
-                                                 a232238_err[i],
-                                                 self.a230232_init,
-                                                 self.a230232_init_err) for i in range(len(a230238))]
+            age_uncorr_rel_err = [age_uncorr_err[i] / age_uncorr[i] * 100
+                                  if age_uncorr[i] != 'Out of range' and age_uncorr_err[i] != '/' else '/' for i in
+                                  range(len(age_uncorr))]
 
-        age_corr_rel_err = [age_corr_err[i] / age_corr[i] * 100
-                            if age_corr[i] != 'Out of range' and age_corr_err[i] != '/' else '/' for i in
-                            range(len(age_corr))]
+            age_corr_err = [self.marincorr_age_error(a230238_corr[i],
+                                                     a230238_corr_err[i],
+                                                     a234238_corr[i],
+                                                     a234238_corr_err[i],
+                                                     a232238[i],
+                                                     a232238_err[i],
+                                                     self.a230232_init,
+                                                     self.a230232_init_err) for i in range(len(a230238))]
+
+            age_corr_rel_err = [age_corr_err[i] / age_corr[i] * 100
+                                if age_corr[i] != 'Out of range' and age_corr_err[i] != '/' else '/' for i in
+                                range(len(age_corr))]
+        else:
+            age_uncorr_err = ['/'] * len(age_uncorr)
+            age_uncorr_rel_err = ['/'] * len(age_uncorr)
+            age_corr_err = ['/'] * len(age_corr)
+            age_corr_rel_err = ['/'] * len(age_corr)
 
         d234U = (np.array(a234238_corr) - 1) * 1000
         d234U_err = np.array(a234238_corr_err) * 1000
@@ -310,12 +320,12 @@ class Analyzer:
         d234U_init = []
         d234U_init_err = []
         for i in range(len(age_corr)):
-            if (age_corr[i] == 'Out of range'):
+            if age_corr[i] == 'Out of range':
                 d234U_init.append('/')
             else:
                 d234U_init.append(((a234238_corr[i] - 1) * np.exp(self.lambda234 * age_corr[i] * 1000)) * 1000)
 
-            if (age_corr[i] == 'Out of range' or age_corr_err[i] == '/'):
+            if age_corr[i] == 'Out of range' or age_corr_err[i] == '/':
                 d234U_init_err.append('/')
             else:
                 d234U_init_err.append(np.sqrt(
@@ -468,10 +478,11 @@ class Analyzer:
         dfConstants = dfConstants.transpose()
         dfConstants.reset_index(level=0, inplace=True)
 
-        # Write Results file
-        writer = ExcelWriter(self.data_root_folder + '\\Results.xlsx', engine='xlsxwriter')
-        ExcelFormatter.format(writer, {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants})
-        writer.save()
+        if self.write_results_file:
+            # Write Results file
+            writer = ExcelWriter(self.data_root_folder + '\\{}.xlsx'.format(filename), engine='xlsxwriter')
+            ExcelFormatter.format(writer, {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants})
+            writer.save()
 
     def thu_alter_kombi(self, a230238, a234238):
 
