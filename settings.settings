@@ -1,3 +1,4 @@
 {
-    "default_constants": "A:/Github Repos/BachelorGUI/dist/GUI/constants - stalag.cfg"
+    "default_constants": "A:/Github Repos/BachelorGUI/dist/GUI/constants - stalag.cfg",
+    "style": "windowsvista"
 }

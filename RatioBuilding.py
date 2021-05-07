@@ -685,17 +685,10 @@ class RatioBuilder:
             cc = pd.read_table(names_data[i], sep='\t')  # read in files from Neptune software
             raw = pd.DataFrame(cc)
 
-            string1 = 'C(C)'
-            string2 = 'C'
-            string3 = '1:233U'
-            string4 = 'Cup'
             sub_cc = raw['Unnamed: 1']  # gets second column
 
-            colCup = 1
             sub_cc = sub_cc.values
-            for j in range(len(sub_cc)):
-                if sub_cc[j] == 'Cup':
-                    rowCup = j
+            rowCup = np.where(sub_cc == 'Cup')[0][0]
             rawnew = raw.iloc[rowCup]
             rawnew = rawnew.values
 

@@ -13,7 +13,6 @@ import MathUtil
 import json
 from DataFrameModel import DataFrameModel
 import pandas as pd
-import Util
 
 
 class InputTabWidget(QWidget):
@@ -60,7 +59,7 @@ class InputTabWidget(QWidget):
         constantsWidget = QWidget()
         constantsHLayout = QHBoxLayout()
         self.constantsFileEdit = QLineEdit()
-        self.constantsFileEdit.setText(self.getDefaultConstantsFile())
+        self.constantsFileEdit.setText(self.window.settings['default_constants'])
         self.constantsFileEdit.setEnabled(False)
         self.newConstantsButton = QPushButton('New')
         self.editConstantsButton = QPushButton('Edit')
@@ -251,7 +250,7 @@ class InputTabWidget(QWidget):
         if not os.path.isfile(fileName):
             return
 
-        if fileName != self.getDefaultConstantsFile():
+        if fileName != self.window.settings['default_constants']:
             self.defaultConstantsButton.setEnabled(True)
         else:
             self.defaultConstantsButton.setEnabled(False)
@@ -262,7 +261,7 @@ class InputTabWidget(QWidget):
         dialog = ConstantsDialog(self)
         dialog.exec_()
 
-        if self.constantsFileEdit.text() != self.getDefaultConstantsFile():
+        if self.constantsFileEdit.text() != self.window.settings['default_constants']:
             self.defaultConstantsButton.setEnabled(True)
         else:
             self.defaultConstantsButton.setEnabled(False)
@@ -271,17 +270,8 @@ class InputTabWidget(QWidget):
         dialog = ConstantsDialog(self, self.constantsFileEdit.text())
         dialog.exec_()
 
-    def getDefaultConstantsFile(self):
-        settingsPath = os.path.join(os.getcwd(), 'settings.settings')
-        if not os.path.isfile(settingsPath):
-            with open(settingsPath, 'w') as file:
-                json.dump({'default_constants': ''}, file, indent=4)
-        with open(settingsPath, 'r') as file:
-           return json.loads(file.read().replace('\n', ''))['default_constants']
-
     def setConstantsAsDefault(self):
-        with open(os.path.join(os.getcwd(), 'settings.settings'), 'w') as file:
-            json.dump({'default_constants': self.constantsFileEdit.text()}, file, indent=4)
+        self.window.settings['default_constants'] = self.constantsFileEdit.text()
         self.defaultConstantsButton.setEnabled(False)
 
     def get_specific_constants(self):
@@ -484,6 +474,7 @@ class InputTabWidget(QWidget):
         self.ratiosTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     def clear(self):
+        self.ratioBuilder.ratios = None
         self.filesList.clear()
         self.uTailGraph.clear()
         self.thTailGraph.clear()

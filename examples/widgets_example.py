@@ -40,7 +40,7 @@
 ## $QT_END_LICENSE$
 ##
 #############################################################################
-
+from PyQt5 import QtWidgets
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtCore import QDateTime, Qt, QTimer
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
@@ -235,7 +235,7 @@ class WidgetGallery(QDialog):
 
 
 if __name__ == '__main__':
-    appctxt = ApplicationContext()
+    appctxt = QtWidgets.QApplication(sys.argv)
     gallery = WidgetGallery()
     gallery.show()
-    sys.exit(appctxt.app.exec_())
+    sys.exit(appctxt.exec_())
