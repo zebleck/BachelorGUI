@@ -119,7 +119,7 @@ class Window(QtWidgets.QMainWindow):
         helpBox = QMessageBox()
         helpBox.setIcon(QMessageBox.Information)
         helpBox.setWindowTitle('How to use')
-        helpBox.setText("Nutzung (Reihenfolge beachten):\n" +
+        helpBox.setText("Nutzung (Reihenfolge beachten):\n\n" +
                         "1. Im Input-Tab den Datenordner auswählen.\n" +
                         "2. Falls noch nicht vorhanden: Konstanten laden oder neu erstellen.\n" +
                         "3. Falls nötig messungsspezifische Konstanten einstellen.\n"

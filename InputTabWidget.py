@@ -10,7 +10,6 @@ from ConstantsDialog import ConstantsDialog
 import DataFolderUtil
 import numpy as np
 import MathUtil
-import json
 from DataFrameModel import DataFrameModel
 import pandas as pd
 
@@ -159,6 +158,7 @@ class InputTabWidget(QWidget):
 
         self.filesList = QListWidget()
         self.filesList.addItem(QListWidgetItem('No files'))
+        self.filesList.itemDoubleClicked.connect(self.openFileItem)
         # self.filesList.setVerticalScrollBar(QScrollBar())
         # self.filesList.setHorizontalScrollBar(QScrollBar())
 
@@ -218,16 +218,16 @@ class InputTabWidget(QWidget):
                 self.addRatios()
                 self.setFilesBox(path)
 
-    def setDirectory(self, path):
+    def setDirectory(self):
         path = str(QFileDialog.getExistingDirectory(self, 'Select data directory'))
         if not os.path.isdir(path):
             return
 
         path = os.path.normpath(path)
         if path != self.dirNameEdit.text():
+            self.clear()
             self.dirNameEdit.setText(path)
             self.setFilesBox(path)
-            self.clear()
 
     def setFilesBox(self, path):
         self.filesList.clear()
@@ -241,6 +241,11 @@ class InputTabWidget(QWidget):
 
         for file in files['data'] + files['blank'] + files['yhasu'] + files['yhasth'] + files['hf']:
             self.filesList.addItem(QListWidgetItem(file))
+
+    def openFileItem(self, item):
+        itemPath = os.path.join(self.dirNameEdit.text(), item.text())
+        if os.path.isfile(itemPath):
+            os.system("notepad.exe {}".format(itemPath))
 
     def loadConstants(self):
         options = QFileDialog.Options()
