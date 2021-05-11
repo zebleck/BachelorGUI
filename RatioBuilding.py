@@ -96,46 +96,46 @@ class RatioBuilder:
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = data33 / (data34 / (cps * yield_U)) * (1 / 137.881 / R58d) ** mf34  # U233/U234
+        R34 = data33 / (data34 / (cps * yield_U)) * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = (data34 / (cps * yield_U)) / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
+        R48 = (data34 / (cps * yield_U)) / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
-        R09 = data30 / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
+        R09 = data30 / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = data32 / (data29 / (cps * yield_Th)) * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / (data29 / (cps * yield_Th)) * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = (data34 / (cps * yield_U)) / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
+        R43 = (data34 / (cps * yield_U)) / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = (data29 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
+        R92 = (data29 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
-        R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = (data34 / (cps * yield_U)) / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
+        R45 = (data34 / (cps * yield_U)) / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
+        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
@@ -173,46 +173,46 @@ class RatioBuilder:
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = data33 / data34 * (1 / 137.881 / R58d) ** mf34  # U233/U234
+        R34 = data33 / data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236 and mass fractionation
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = data34 / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
+        R48 = data34 / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
-        R09 = data30 / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
+        R09 = data30 / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = data32 / (data29 / (cps * yield_Th)) * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / (data29 / (cps * yield_Th)) * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = data34 / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
+        R43 = data34 / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = ((data29 / cps) * yield_Th / data32) * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
+        R92 = ((data29 / cps) * yield_Th / data32) * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92);
 
-        R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = data34 / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
+        R45 = data34 / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
+        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
@@ -251,46 +251,46 @@ class RatioBuilder:
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = data33 / data34 * (1 / 137.881 / R58d) ** mf34  # U233/U234
+        R34 = data33 / data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236 and mass fractionation
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = data34 / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
+        R48 = data34 / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R58u)
 
-        R09 = (data30 / (cps * yield_Th)) / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
+        R09 = (data30 / (cps * yield_Th)) / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = data32 / data29 * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / data29 * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = data34 / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
+        R43 = data34 / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = data29 / data32 * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
+        R92 = data29 / data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
-        R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = data34 / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
+        R45 = data34 / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
+        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
@@ -329,46 +329,46 @@ class RatioBuilder:
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = data35 / data38 * (1 / 137.881 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = data33 / data34 * (1 / 137.881 / R58d) ** mf34  # U233/U234
+        R34 = data33 / data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = data35 / data36 * (1 / 137.881 / R58d) ** mf56  # U235/U236 and mass fractionation
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = data34 / data38 * (1 / 137.881 / R58d) ** mf48  # U234/U238
+        R48 = data34 / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
-        R09 = data30 / data29 * (1 / 137.881 / R58d) ** mf09  # Th230/Th229
+        R09 = data30 / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR30, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = data32 / data29 * (1 / 137.881 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / data29 * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR32, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = data34 / data33 * (1 / 137.881 / R58d) ** mf43  # U233/U234
+        R43 = data34 / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = data29 / data32 * (1 / 137.881 / R58d) ** mf92  # Th232/Th229
+        R92 = data29 / data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
-        R36 = data33 / data36 * (1 / 137.881 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = data34 / data35 * (1 / 137.881 / R58d) ** mf45  # U233/U234
+        R45 = data34 / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = data30 / data32 * (1 / 137.881 / R58d) ** mf02  # Th230/Th229
+        R02 = data30 / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = data33 / data38 * (1 / 137.881 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = data36 / data38 * (1 / 137.881 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = data33 / data35 * (1 / 137.881 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
@@ -810,8 +810,19 @@ class RatioBuilder:
         os.chdir(old_path)
 
     def outliertest(self, X):
-        smaller = np.mean(X) + 2 * np.std(X, ddof=1)
-        larger = np.mean(X) - 2 * np.std(X, ddof=1)
+        # Consider for future (potentially more advanced outlier detection)
+        #stds = []
+        #for i in range(1000):
+        #    stds.append(np.std(np.random.choice(X, 5, replace=False), ddof=1))
+        #std = np.median(stds)
+        std = np.std(X, ddof=1)
+
+        if self.useMean:
+            smaller = np.mean(X) + 2 * std
+            larger = np.mean(X) - 2 * std
+        else:
+            smaller = np.median(X) + 2 * std
+            larger = np.median(X) - 2 * std
 
         for m in range(len(X)):
             if (X[m] > smaller) or (X[m] < larger):

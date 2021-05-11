@@ -166,7 +166,7 @@ class Analyzer:
             else:
 
                 labnr_row = fullMetadata[fullMetadata['Lab. #'].astype(str) == labnr]
-
+                
                 metadata_dict['Lab. #'].append(labnr)
                 metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
                 metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
@@ -737,20 +737,20 @@ class Analyzer:
         else:
             return np.sqrt(((au * np.exp(-self.lambda230 * aw * 1000)) / (self.lambda230 * (
                     np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                -(self.lambda230 - self.lambda234) * aw * 1000)
-                    - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * at ** 22 + (
-                                   (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
-                                   self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
-                                                     (aj / 1000) * np.exp(
-                                       -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
-                                       -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
-                                   (self.lambda230 / (self.lambda230 - self.lambda234))
-                                   * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
-                                           self.lambda230 * (
-                                           np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                                       -(self.lambda230 - self.lambda234) * aw * 1000)
-                                           - as_ * au * np.exp(
-                                       -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
+                    -(self.lambda230 - self.lambda234) * aw * 1000)
+                    - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * at ** 2 + (
+                    (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
+                    self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
+                    (aj / 1000) * np.exp(
+                    -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
+                    -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
+                    (self.lambda230 / (self.lambda230 - self.lambda234))
+                    * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
+                    self.lambda230 * (
+                    np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
+                    -(self.lambda230 - self.lambda234) * aw * 1000)
+                    - as_ * au * np.exp(
+                    -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
                     self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                -(self.lambda230 - self.lambda234) * aw * 1000)
-                                      - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000
+                    -(self.lambda230 - self.lambda234) * aw * 1000)
+                    - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000

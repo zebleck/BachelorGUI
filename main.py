@@ -64,7 +64,7 @@ class Window(QtWidgets.QMainWindow):
         openGitHubAction.triggered.connect(self.openGitHub)
 
         fullscreenAction = QtWidgets.QAction('Toggle fullscreen', self)
-        fullscreenAction.setShortcut('F12')
+        fullscreenAction.setShortcut('F11')
         fullscreenAction.triggered.connect(self.toggle_fullscreen)
 
         self.styleActions = {}
@@ -82,7 +82,7 @@ class Window(QtWidgets.QMainWindow):
         fileMenu.addAction(closeAction)
         viewMenu = mainMenu.addMenu('&View')
         viewMenu.addAction(fullscreenAction)
-        styleMenu = viewMenu.addMenu('&Styles')
+        styleMenu = viewMenu.addMenu('&Style')
         for action in self.styleActions.values():
             styleMenu.addAction(action)
         helpMenu = mainMenu.addMenu('&Help')
@@ -111,8 +111,16 @@ class Window(QtWidgets.QMainWindow):
         constants = Util.load_constants(self.inputTab.get_constants_path())
         self.analyzer.set_constants(constants)
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
-        self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
-        self.analysisTab.display()
+        try:
+            self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
+            self.analysisTab.display()
+        except PermissionError:
+            self.analysisTab.display()
+            error_dialog = QtWidgets.QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setWindowTitle('Permission error')
+            error_dialog.setText('Could not save \"Results.xlsx\". Please close the related \"Results.xlsx\" file if it is open.')
+            error_dialog.exec_()
 
 
     def showHelp(self):
