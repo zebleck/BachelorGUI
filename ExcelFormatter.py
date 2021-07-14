@@ -8,14 +8,14 @@ def format(writer, dfs):
     # remove the index by setting the kwarg 'index' to False
     # df.to_excel(excel_writer=writer, sheet_name='Sheet1', index=False)
 
-    header_format = writer.book.add_format({'bold': True, 'align': 'center', 'border': 0})
-    constants_header_format = writer.book.add_format({'bold': True, 'align': 'right', 'left': 1, 'top': 1, 'bottom': 1, 'right': 1, 'bg_color': '#ddb310'})
-    constants_content_format = writer.book.add_format({'align': 'left', 'right': 1, 'top': 1, 'bottom': 1, 'bg_color': '#DCDCDC'})
-    bottom_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'bottom': 6})
-    standard_format = writer.book.add_format({'bg_color': '#d8e4bc'})
-    superscript = writer.book.add_format({'bold': True, 'font_script': 1})
-    subscript = writer.book.add_format({'bold': True, 'font_script': 2})
-
+    header_format = writer.book.add_format({'bold': True, 'align': 'center', 'border': 0, 'font_name': 'Arial', 'font_size': 11})
+    constants_header_format = writer.book.add_format({'bold': True, 'align': 'right', 'left': 1, 'top': 1, 'bottom': 1, 'right': 1, 'bg_color': '#ddb310', 'font_name': 'Arial', 'font_size': 11})
+    constants_content_format = writer.book.add_format({'align': 'left', 'right': 1, 'top': 1, 'bottom': 1, 'bg_color': '#DCDCDC', 'font_name': 'Arial', 'font_size': 11})
+    bottom_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'bottom': 6, 'font_name': 'Arial', 'font_size': 11})
+    standard_format = writer.book.add_format({'bg_color': '#d8e4bc', 'align': 'center', 'font_name': 'Arial', 'font_size': 11})
+    normal_format = writer.book.add_format({'align': 'center', 'font_name': 'Arial', 'font_size': 11})
+    superscript = writer.book.add_format({'bold': True, 'font_script': 1, 'font_name': 'Arial', 'font_size': 11})
+    subscript = writer.book.add_format({'bold': True, 'font_script': 2, 'font_name': 'Arial', 'font_size': 11})
     for sheetname, df in dfs.items():  # loop through `dict` of dataframes
         if sheetname == 'Constants':
             df.to_excel(writer, sheet_name=sheetname, index=False, header=False)
@@ -43,6 +43,8 @@ def format(writer, dfs):
                 for i in range(len(labnrs)):
                     if labnrs[i] == standard:
                         worksheet.set_row(i+1, None, standard_format)
+                    else:
+                        worksheet.set_row(i+1, None, normal_format)
 
             # Set header formats
             if sheetname == 'Input' or sheetname == 'Results' or sheetname == 'Calc':

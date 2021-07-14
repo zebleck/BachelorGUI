@@ -1,6 +1,8 @@
 import ntpath
 import json
 import pandas as pd
+import os
+import numpy as np
 
 
 def load_constants(path):
@@ -31,6 +33,27 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
+def get_dates(path):
+    dates = []
+
+    old_path = os.getcwd()
+
+    folder_data = os.path.join(path, 'data')
+    list_data = os.listdir(folder_data)
+    names_data = np.sort(np.array(list_data))
+
+    for i in range(len(names_data)):
+        os.chdir(folder_data)
+        cc = pd.read_table(names_data[i], sep='\t')  # read in files from Neptune software
+        raw = pd.DataFrame(cc)
+
+        dates.append(raw.iloc[1, 0].replace('Date: ', ''))
+
+    os.chdir(old_path)
+
+    return dates
+
+
 def maybe_make_number(s):
     """Returns a string 's' into a integer if possible, a float if needed or
     returns it as is.
@@ -49,3 +72,9 @@ def maybe_make_number(s):
 
 def try_convert_to_int(l):
     return list(map(maybe_make_number, l))
+
+
+def save_array(arr, path, name):
+    with open(os.path.join(path, name + '.txt'), 'w') as file:
+        for line in arr:
+            file.write(str(line) + '\n')

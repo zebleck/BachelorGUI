@@ -56,8 +56,12 @@ class Window(QtWidgets.QMainWindow):
         closeAction.triggered.connect(self.close_application)
 
         showHelpAction = QtWidgets.QAction('Nutzung', self)
-        showHelpAction.setStatusTip('Shows how to use the program')
+        showHelpAction.setStatusTip('Shows, how to use the program.')
         showHelpAction.triggered.connect(self.showHelp)
+
+        showAboutAction = QtWidgets.QAction('Info', self)
+        showAboutAction.setStatusTip('Shows information about this program.')
+        showAboutAction.triggered.connect(self.showAbout)
 
         openGitHubAction = QtWidgets.QAction('GitHub', self)
         openGitHubAction.setStatusTip('Opens the GitHub repository of this GUI')
@@ -88,6 +92,7 @@ class Window(QtWidgets.QMainWindow):
         helpMenu = mainMenu.addMenu('&Help')
         helpMenu.addAction(showHelpAction)
         helpMenu.addAction(openGitHubAction)
+        helpMenu.addAction(showAboutAction)
 
     def setPaths(self, path):
         if not os.path.isdir(path):
@@ -112,7 +117,7 @@ class Window(QtWidgets.QMainWindow):
         self.analyzer.set_constants(constants)
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
         try:
-            self.analyzer.calc_concentrations(self.ratioBuilder.ratios)
+            self.analyzer.analyze(self.ratioBuilder.ratios)
             self.analysisTab.display()
         except PermissionError:
             self.analysisTab.display()
@@ -142,6 +147,18 @@ class Window(QtWidgets.QMainWindow):
                         "ordner als Vorlage nehmen. Bei weiteren Fragen oder Problemen bitte "
                         "@fabi anschreiben auf Mattermost oder Email an f.kontor@stud.uni-heidelberg.de.")
         helpBox.exec_()
+
+
+    def showAbout(self):
+        aboutBox = QMessageBox()
+        aboutBox.setIcon(QMessageBox.Information)
+        aboutBox.setWindowTitle('Info')
+        aboutBox.setTextFormat(QtCore.Qt.RichText)
+        aboutBox.setText('Programm: U/Th Data Analysis v1.0<br>' +
+                         'Erstellt von: Fabian Kontor am Institut für Umweltphysik in Heidelberg (2021)<br>' +
+                         'Ermöglicht durch: PyQt5, <a href="https://pypi.org/project/PyQt5/">https://pypi.org/project/PyQt5/</a>')
+        aboutBox.exec_()
+
 
     def get_change_style_action(self, style):
         return lambda: self.change_style(style)

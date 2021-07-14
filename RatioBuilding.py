@@ -6,6 +6,7 @@ import scipy.interpolate
 import ExcelFormatter
 import DataFolderUtil
 import Util
+from scipy.stats import iqr
 
 
 class RatioBuilder:

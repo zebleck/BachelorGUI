@@ -23,15 +23,18 @@ class DataFrameModel(QtCore.QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
-                try:
-                    return str(self._data.iloc[index.row(), index.column()])#'{:.4e}'.format(self._data.iloc[index.row(), index.column()])
-                except:
-                    return str(self._data.iloc[index.row(), index.column()])
+                if self._data.columns[index.column()] == 'Lab. #':
+                    return self._data.iloc[index.row(), index.column()]
+                else:
+                    try:
+                        return '{:.4g}'.format(self._data.iloc[index.row(), index.column()])
+                    except:
+                        return str(self._data.iloc[index.row(), index.column()])
             if role == Qt.FontRole and self.index[index.row()] == '':
                 font = QFont()
                 font.setBold(True)
                 return font
-            if role == Qt.TextAlignmentRole and self.index[index.row()] == '':
+            if role == Qt.TextAlignmentRole:
                 return Qt.AlignCenter
             if role == Qt.BackgroundRole:
                 if self.standards is not None:

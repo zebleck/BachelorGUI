@@ -141,16 +141,20 @@ class Analyzer:
 
         measurementLabNrs = DataFolderUtil.getLabNrsFromList(list(ratios.index))
 
+        # get measurement dates (add to metadata array, because it gets added to excel later, on calc sheet)
+        dates = Util.get_dates(self.data_root_folder)
+
+        # duplicate last standard row if last measurement was not standard measurement
         indices = list(ratios.index)
         if measurementLabNrs[-1] != self.standard and self.standard is not None:
             measurementLabNrs.append(self.standard)
             indices.append(indices[-2])
-
+            dates.append(dates[-2])
         '''
          build up measurement specific metadata dataframe
         '''
         metadata_dict = {
-            'Lab. #': [], 'Bezeich.': [], 'Art der Probe': [], 'Mess. Dat.': [], 'Tiefe': [],
+            'Lab. #': [], 'Bezeich.': [], 'Art der Probe': [], 'Mess. Dat.': dates, 'Tiefe': [],
             'Einwaage (g)': [], 'TriSp13 (g)': []
         }
 
@@ -159,18 +163,16 @@ class Analyzer:
                 metadata_dict['Lab. #'].append(labnr)
                 metadata_dict['Bezeich.'].append(standardRow.iloc[0]['Bezeich.'])
                 metadata_dict['Art der Probe'].append(standardRow.iloc[0]['Art der Probe'])
-                metadata_dict['Mess. Dat.'].append(standardRow.iloc[0]['Mess. Dat.'])
                 metadata_dict['Tiefe'].append(standardRow.iloc[0]['Tiefe'])
                 metadata_dict['Einwaage (g)'].append(standardRow.iloc[0]['Einwaage (g)'])
                 metadata_dict['TriSp13 (g)'].append(standardRow.iloc[0]['TriSp13 (g)'])
             else:
 
                 labnr_row = fullMetadata[fullMetadata['Lab. #'].astype(str) == labnr]
-                
+
                 metadata_dict['Lab. #'].append(labnr)
                 metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
                 metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
-                metadata_dict['Mess. Dat.'].append(labnr_row.iloc[0]['Mess. Dat.'])
                 metadata_dict['Tiefe'].append(labnr_row.iloc[0]['Tiefe'])
                 metadata_dict['Einwaage (g)'].append(labnr_row.iloc[0]['Einwaage (g)'])
                 metadata_dict['TriSp13 (g)'].append(labnr_row.iloc[0]['TriSp13 (g)'])
@@ -195,7 +197,8 @@ class Analyzer:
                                     'Blank 232 (ng)': blank232,
                                     'Ch. Blank 230 (fg)': chBlank230}, index=indices)
 
-    def calc_concentrations(self, ratios, filename='Results'):
+
+    def analyze(self, ratios, filename='Results'):
         ratios = ratios.copy()
 
         # Add additional row if last standard was not measured
@@ -277,33 +280,54 @@ class Analyzer:
         age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
                     range(len(a230238_corr))]
 
+
         # Age errors
+
+        age_uncorr_errors = []
+        age_uncorr_rel_errors = []
+        age_uncorr_fractions = []
+        age_corr_errors = []
+        age_corr_rel_errors = []
+        age_corr_fractions = []
+
         if self.calculate_age_errors:
-            age_uncorr_err = [self.montealter(a230238_corr[i], a230238_corr_err[i], a234238_corr[i], a234238_corr_err[i])
-                              for i in
-                              range(len(age_uncorr))]
+            for i in range(len(age_uncorr)):
+                if age_uncorr[i] == 'Out of range':
+                    age_uncorr_errors.append('/')
+                    age_uncorr_rel_errors.append('/')
+                    age_uncorr_fractions.append('/')
+                else:
+                    error, out_of_range_fraction = self.montealter(a230238_corr[i],
+                                                                   a230238_corr_err[i],
+                                                                   a234238_corr[i],
+                                                                   a234238_corr_err[i])
+                    age_uncorr_errors.append(error)
+                    age_uncorr_rel_errors.append(error / age_uncorr[i] * 100)
+                    age_uncorr_fractions.append(100 - out_of_range_fraction * 100)
 
-            age_uncorr_rel_err = [age_uncorr_err[i] / age_uncorr[i] * 100
-                                  if age_uncorr[i] != 'Out of range' and age_uncorr_err[i] != '/' else '/' for i in
-                                  range(len(age_uncorr))]
-
-            age_corr_err = [self.marincorr_age_error(a230238_corr[i],
-                                                     a230238_corr_err[i],
-                                                     a234238_corr[i],
-                                                     a234238_corr_err[i],
-                                                     a232238[i],
-                                                     a232238_err[i],
-                                                     self.a230232_init,
-                                                     self.a230232_init_err) for i in range(len(a230238))]
-
-            age_corr_rel_err = [age_corr_err[i] / age_corr[i] * 100
-                                if age_corr[i] != 'Out of range' and age_corr_err[i] != '/' else '/' for i in
-                                range(len(age_corr))]
+                if age_corr[i] == 'Out of range':
+                    age_corr_errors.append('/')
+                    age_corr_rel_errors.append('/')
+                    age_corr_fractions.append('/')
+                else:
+                    error, out_of_range_fraction = self.marincorr_age_error(a230238_corr[i],
+                                                                            a230238_corr_err[i],
+                                                                            a234238_corr[i],
+                                                                            a234238_corr_err[i],
+                                                                            a232238[i],
+                                                                            a232238_err[i],
+                                                                            self.a230232_init,
+                                                                            self.a230232_init_err)
+                    age_corr_errors.append(error)
+                    age_corr_rel_errors.append(error / age_corr[i] * 100)
+                    age_corr_fractions.append(100 - out_of_range_fraction * 100)
         else:
-            age_uncorr_err = ['/'] * len(age_uncorr)
-            age_uncorr_rel_err = ['/'] * len(age_uncorr)
-            age_corr_err = ['/'] * len(age_corr)
-            age_corr_rel_err = ['/'] * len(age_corr)
+            age_uncorr_errors = ['/'] * len(age_uncorr)
+            age_uncorr_rel_errors = ['/'] * len(age_uncorr)
+            age_uncorr_fractions = ['/'] * len(age_uncorr)
+            age_corr_errors = ['/'] * len(age_uncorr)
+            age_corr_rel_errors = ['/'] * len(age_uncorr)
+            age_corr_fractions = ['/'] * len(age_uncorr)
 
         d234U = (np.array(a234238_corr) - 1) * 1000
         d234U_err = np.array(a234238_corr_err) * 1000
@@ -325,13 +349,13 @@ class Analyzer:
             else:
                 d234U_init.append(((a234238_corr[i] - 1) * np.exp(self.lambda234 * age_corr[i] * 1000)) * 1000)
 
-            if age_corr[i] == 'Out of range' or age_corr_err[i] == '/':
+            if age_corr[i] == 'Out of range' or age_corr_errors[i] == '/':
                 d234U_init_err.append('/')
             else:
                 d234U_init_err.append(np.sqrt(
                     (np.exp(self.lambda234 * age_corr[i] * 1000) * a234238_corr_err[i]) ** 2 + (
                             (a234238_corr[i] - 1) * self.lambda234 * np.exp(self.lambda234 * age_corr[i] * 1000) *
-                            age_corr_err[i] * 1000) ** 2) * 1000)
+                            age_corr_errors[i] * 1000) ** 2) * 1000)
 
         cheng_corr = [age_corr[i] * 1000 - 58
                       if age_corr[i] != 'Out of range' else 'Out of range' for i in range(len(age_corr))]
@@ -374,14 +398,15 @@ class Analyzer:
             'd234U': d234U, 'Fehler15': d234U_err,
             '230Th/238U': a230238, 'Fehler16': a230238_err,
             '230Th/238Ukorr': a230238_corr, 'Fehler17': a230238_corr_err,
-            'Alter (unkorr.)': age_uncorr, 'Fehler18': age_uncorr_err, 'Fehler': age_uncorr_rel_err,
+            'Alter (unkorr.)': age_uncorr, 'Fehler18': age_uncorr_errors, 'Fehler': age_uncorr_rel_errors,
             '232Th/238U': a232238, 'Fehler20': a232238_err,
             '(230Th/232Th)': self.a230232_init, 'Fehler21': self.a230232_init_err,
-            'Cheng korr.': age_corr, 'Fehler22': age_corr_err, 'Fehler23': age_corr_taylor,
-            'Fehler24': age_corr_rel_err,
+            'Cheng korr.': age_corr, 'Fehler22': age_corr_errors, 'Fehler23': age_corr_taylor,
+            'Fehler24': age_corr_rel_errors,
             'Bezeichnung': list(self.metadata['Bezeich.']), 'Tiefe': self.metadata['Tiefe'],
             'd234U (initial)': d234U_init, 'Fehler25': d234U_init_err,
-            'Cheng korr': cheng_corr, 'Fehler 1σ': taylor_err_one_sig, '2sig/t': two_sig_t
+            'Cheng korr': cheng_corr, 'Fehler 1σ': taylor_err_one_sig, '2sig/t': two_sig_t,
+            'Unkorr. Montefehler Erfolgsrate': age_uncorr_fractions, 'Korr. Montefehler Erfolgsrate': age_corr_fractions
         })
 
         calc_units = ['', '', 'gem.+korr.', '(abso.)', 'gem.+korr.', '(abso.)', 'gem.',
@@ -393,7 +418,7 @@ class Analyzer:
                       'Akt. Ver.', '(abso.)', 'Akt.Ver.', '(abso.)', '(ka)', '(ka)', '(%)',
                       'Akt. Ver.', '(abso.)', 'Akt. Ver. initial', '(abso.)', '(ka)', '(ka)',
                       'Taylor 1. Ord.', '(%)', '', self.tiefe_unit, '(o/oo)', '(abso.) o/oo',
-                      '(a BP)', '(a)', '(%)']
+                      '(a BP)', '(a)', '(%)', '(%)', '(%)']
 
         calc_units_frame = pd.DataFrame(dict(zip(self.calc.columns, calc_units)), index=[''])
 
@@ -414,8 +439,8 @@ class Analyzer:
             '230Th/238U': list(a230238_corr), 'Fehler3': list(a230238_corr_err),
             '230Th/232Th': list(a230232), 'Fehler4': list(a230232_err),
             'd234U korr': list(d234U), 'Fehler5': list(d234U_err),
-            'Alter (unkorr.)': list(age_uncorr), 'Fehler6': list(age_uncorr_err),
-            'Alter (korr.)': list(age_corr), 'Fehler7': list(age_corr_err),
+            'Alter (unkorr.)': list(age_uncorr), 'Fehler6': list(age_uncorr_errors),
+            'Alter (korr.)': list(age_corr), 'Fehler7': list(age_corr_errors),
             'd234U (initial)': list(d234U_init), 'Fehler8': list(d234U_init_err),
             'Tiefe': list(self.metadata['Tiefe'])
         },
@@ -634,6 +659,39 @@ class Analyzer:
 
         return 'Out of range'
 
+    def montealter(self, a230238, a230238_err, a234238, a234238_err):
+        # number of iterations
+        iter = 5000
+
+        felda = np.empty(iter)
+        feldb = np.empty(iter)
+        res = np.empty(iter)
+
+        summe = 0
+        out_of_range_fraction = 0
+        for i in range(iter):
+            felda[i] = self.gauss() * a230238_err + a230238
+            feldb[i] = self.gauss() * a234238_err + a234238
+
+            result = self.thu_alter_kombi(felda[i], feldb[i])
+            if result == 'Out of range':
+                out_of_range_fraction += 1
+                continue
+            res[i] = result
+            summe = summe + res[i]
+
+        out_of_range_fraction /= iter
+
+        mean = summe / iter
+
+        summe = 0
+        for i in range(iter):
+            summe = summe + ((res[i] - mean) * (res[i] - mean))
+
+        fehl = np.sqrt(summe / (iter - 1))
+
+        return np.round(fehl, 4), out_of_range_fraction
+
     # AV = a230238
     # AU = a234238
     # AT232 = a232238
@@ -650,6 +708,7 @@ class Analyzer:
         feldd = np.empty(iter)
         res = np.empty(iter)
 
+        out_of_range_fraction = 0
         for i in range(iter):
             felda[i] = self.gauss() * a230238_err + a230238
             feldb[i] = self.gauss() * a234238_err + a234238
@@ -658,27 +717,35 @@ class Analyzer:
             result = self.marincorr_age(felda[i], feldb[i], feldc[i], feldd[i])
 
             if result == 'Out of range':
-                return '/'
-            res[i] = result
-            summe = summe + res[i]
+                out_of_range_fraction += 1
+                res[i] = 0
+            else:
+                res[i] = result
+                summe = summe + res[i]
 
-        mean = np.round(summe / iter, 4)
+        if iter == out_of_range_fraction:
+            return '/', 1.0
+
+        actual_iter = iter - out_of_range_fraction
+        out_of_range_fraction /= iter
+
+        mean = summe / actual_iter
 
         summe = 0
 
         for i in range(iter):
             summe = summe + ((res[i] - mean) * (res[i] - mean))
 
-        fehl = np.sqrt(summe / (iter - 1))
+        fehl = np.sqrt(summe / (actual_iter - 1))
 
-        return np.round(fehl, 10)
+        return np.round(fehl, 4), out_of_range_fraction
 
     iset = 0
     var1 = 0
 
     def gauss(self):
         if self.iset == 0:
-            while (True):
+            while True:
                 v1 = (2 * random()) - 1
                 v2 = (2 * random()) - 1
                 r = (v1 * v1 + v2 * v2)
@@ -692,35 +759,6 @@ class Analyzer:
         else:
             self.iset = 0
             return self.var1
-
-    def montealter(self, a230238, a230238_err, a234238, a234238_err):
-        # number of iterations
-        iter = 4999
-
-        felda = np.empty(iter)
-        feldb = np.empty(iter)
-        res = np.empty(iter)
-
-        summe = 0
-        for i in range(iter):
-            felda[i] = self.gauss() * a230238_err + a230238
-            feldb[i] = self.gauss() * a234238_err + a234238
-
-            result = self.thu_alter_kombi(felda[i], feldb[i])
-            if result == 'Out of range':
-                return '/'
-            res[i] = result
-            summe = summe + res[i]
-
-        mean = np.round(summe / iter, 2)
-
-        summe = 0
-        for i in range(iter):
-            summe = summe + ((res[i] - mean) * (res[i] - mean))
-
-        fehl = np.sqrt(summe / (iter - 1))
-
-        return np.round(fehl, 4)
 
     # AU = self.a230232_init
     # AW = age_corr
