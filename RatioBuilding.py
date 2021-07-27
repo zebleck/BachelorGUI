@@ -6,7 +6,7 @@ import scipy.interpolate
 import ExcelFormatter
 import DataFolderUtil
 import Util
-from scipy.stats import iqr
+from scipy.stats import median_abs_deviation, iqr
 
 
 class RatioBuilder:
@@ -14,6 +14,8 @@ class RatioBuilder:
     def __init__(self):
         self.data_root_folder = None
         self.ratios = None
+        self.mean_option = 'median'
+        self.dev_option = 'std'
 
     def set_path(self, path):
         self.data_root_folder = path
@@ -62,7 +64,10 @@ class RatioBuilder:
         self.yield_U = specific_constants['Yield_U']
         self.gain = specific_constants['Gain']
         self.tailShift = specific_constants['Tail shift']
-        self.useMean = specific_constants['Use mean']
+
+    def set_options(self, mean_option='median', dev_option='std'):
+        self.mean_option = mean_option
+        self.dev_option = dev_option
 
     def post_904IC(self, data, i, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
                    R35_33,
@@ -711,7 +716,14 @@ class RatioBuilder:
 
             os.chdir(self.data_root_folder)
 
+
+
             data = raw.iloc[(rowphelp + 1):(rowCup), (col233):(col233 + 9)]
+            #print(data)
+            #print(data.iloc[3])
+            #print(data.shape)
+
+            # TODO: 229 cup gegen sem austauschen
             data = data.values
             data = data.astype(np.float)
 
@@ -816,28 +828,31 @@ class RatioBuilder:
         #for i in range(1000):
         #    stds.append(np.std(np.random.choice(X, 5, replace=False), ddof=1))
         #std = np.median(stds)
-        std = np.std(X, ddof=1)
 
-        if self.useMean:
-            smaller = np.mean(X) + 2 * std
-            larger = np.mean(X) - 2 * std
-        else:
-            smaller = np.median(X) + 2 * std
-            larger = np.median(X) - 2 * std
+        mean = None
+        std = None
 
-        for m in range(len(X)):
-            if (X[m] > smaller) or (X[m] < larger):
-                X[m] = float('nan')
-            else:
-                X[m] = X[m]
+        if self.mean_option == 'mean':
+            mean = np.mean(X)
+        elif self.mean_option == 'median':
+            mean = np.median(X)
 
-        X = X[~np.isnan(X)]
+        if self.dev_option == 'std':
+            std = np.std(X, ddof=1)
+        elif self.dev_option == 'mad':
+            std = median_abs_deviation(X)
+        elif self.dev_option == 'iqr':
+            std = iqr(X)
+
+        inRangeIndices = np.where(np.logical_and(X >= mean - 2 * std, X <= mean + 2 * std))[0]
+        X = X[inRangeIndices]
 
         errX = 2 * np.std(X, ddof=1) / np.sqrt(len(X))  # 2 sigma SE
 
-        if self.useMean:
+        meanX = None
+        if self.mean_option == 'mean':
             meanX = np.mean(X)
-        else:
+        elif self.mean_option == 'median':
             meanX = np.median(X)
         errRelX = errX / meanX  # 2 sigma relative error
 

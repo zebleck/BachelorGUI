@@ -1,12 +1,14 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QTabWidget, QMessageBox, QStyleFactory
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QTabWidget, QMessageBox, QStyleFactory, QShortcut
+from PyQt5.QtGui import QIcon, QKeySequence
 import sys
 import os
 
 from Analyzer import Analyzer
+from Inspector import Inspector
 from InputTabWidget import InputTabWidget
 from AnalysisTabWidget import AnalysisTabWidget
+from InspectTabWidget import InspectTabWidget
 
 from RatioBuilding import RatioBuilder
 import DataFolderUtil
@@ -30,12 +32,18 @@ class Window(QtWidgets.QMainWindow):
 
         self.ratioBuilder = RatioBuilder()
         self.analyzer = Analyzer()
+        self.inspector = Inspector()
 
         self.inputTab = InputTabWidget(self, self.ratioBuilder)
+        self.inspectTab = InspectTabWidget(self, self.inspector)
         self.analysisTab = AnalysisTabWidget(self, self.ratioBuilder, self.analyzer)
         self.tabWidget.addTab(self.inputTab, 'Input')
+        self.tabWidget.addTab(self.inspectTab, 'Inspect')
         self.tabWidget.addTab(self.analysisTab, 'Analysis')
         self.setCentralWidget(self.tabWidget)
+
+        self.quitSc = QShortcut(QKeySequence('Ctrl+R'), self)
+        self.quitSc.activated.connect(self.inputTab.runEvent)
 
         self.inputTab.dirNameEdit.textChanged.connect(lambda: self.setPaths(self.inputTab.dirNameEdit.text()))
 
@@ -78,7 +86,6 @@ class Window(QtWidgets.QMainWindow):
             styleAction.setCheckable(True)
             self.styleActions[style] = styleAction
 
-
         # menu
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
@@ -98,9 +105,9 @@ class Window(QtWidgets.QMainWindow):
         if not os.path.isdir(path):
             return
 
+        self.inspectTab.set_path(path)
         self.analysisTab.searchMetadataFile(path)
         self.analyzer.set_path(path)
-
 
     def calcRatios(self, path):
         DataFolderUtil.createDataFolders(path)
@@ -108,6 +115,8 @@ class Window(QtWidgets.QMainWindow):
         self.ratioBuilder.set_path(path)
         constants = Util.load_constants(self.inputTab.get_constants_path())
         self.ratioBuilder.set_constants(constants)
+        self.ratioBuilder.set_options(mean_option=self.inspectTab.mean_option,
+                                      dev_option=self.inspectTab.dev_option)
         self.ratioBuilder.set_specific_constants(self.inputTab.get_specific_constants())
         self.ratioBuilder.data_correction()
 
@@ -124,9 +133,9 @@ class Window(QtWidgets.QMainWindow):
             error_dialog = QtWidgets.QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)
             error_dialog.setWindowTitle('Permission error')
-            error_dialog.setText('Could not save \"Results.xlsx\". Please close the related \"Results.xlsx\" file if it is open.')
+            error_dialog.setText(
+                'Could not save \"Results.xlsx\". Please close the related \"Results.xlsx\" file if it is open.')
             error_dialog.exec_()
-
 
     def showHelp(self):
         helpBox = QMessageBox()
@@ -148,7 +157,6 @@ class Window(QtWidgets.QMainWindow):
                         "@fabi anschreiben auf Mattermost oder Email an f.kontor@stud.uni-heidelberg.de.")
         helpBox.exec_()
 
-
     def showAbout(self):
         aboutBox = QMessageBox()
         aboutBox.setIcon(QMessageBox.Information)
@@ -158,7 +166,6 @@ class Window(QtWidgets.QMainWindow):
                          'Erstellt von: Fabian Kontor am Institut für Umweltphysik in Heidelberg (2021)<br>' +
                          'Ermöglicht durch: PyQt5, <a href="https://pypi.org/project/PyQt5/">https://pypi.org/project/PyQt5/</a>')
         aboutBox.exec_()
-
 
     def get_change_style_action(self, style):
         return lambda: self.change_style(style)
@@ -191,6 +198,7 @@ class Window(QtWidgets.QMainWindow):
 
     def close_application(self):
         sys.exit()
+
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")

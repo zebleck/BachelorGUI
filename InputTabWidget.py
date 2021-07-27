@@ -12,6 +12,7 @@ import numpy as np
 import MathUtil
 from DataFrameModel import DataFrameModel
 import pandas as pd
+import Util
 
 
 class InputTabWidget(QWidget):
@@ -24,6 +25,8 @@ class InputTabWidget(QWidget):
         self.initSettingsBox()
         self.initOverviewBox()
         self.initRatiosBox()
+
+        self.runListeners = []
 
         layout = QGridLayout()
         layout.addWidget(self.settingsBox, 0, 0)
@@ -115,13 +118,9 @@ class InputTabWidget(QWidget):
         blankLabel = QLabel('Blank abziehen?')
         blankLabel.setFont(font)
         blankLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        meanMedianLabel = QLabel('Mean anstatt Median für Outlier-Detektion?')
-        meanMedianLabel.setFont(font)
-        meanMedianLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.tailShiftCheckBox = QCheckBox()
         self.blankCheckBox = QCheckBox()
         self.blankCheckBox.setChecked(True)
-        self.meanMedianCheckBox = QCheckBox()
 
         customBox = QGroupBox('Custom constants')
         customLayout = QGridLayout()
@@ -129,10 +128,8 @@ class InputTabWidget(QWidget):
         customLayout.addWidget(customTable, 0, 0, 1, 2)
         customLayout.addWidget(blankLabel, 1, 0, 1, 1)
         customLayout.addWidget(tailShiftLabel, 2, 0, 1, 1)
-        customLayout.addWidget(meanMedianLabel, 3, 0, 1, 1)
         customLayout.addWidget(self.blankCheckBox, 1, 1, 1, 1)
         customLayout.addWidget(self.tailShiftCheckBox, 2, 1, 1, 1)
-        customLayout.addWidget(self.meanMedianCheckBox, 3, 1, 1, 1)
         customLayout.addItem(QtWidgets.QSpacerItem(0, 15, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum), 4, 1, 1, 1)
         customBox.setLayout(customLayout)
 
@@ -158,7 +155,7 @@ class InputTabWidget(QWidget):
 
         self.filesList = QListWidget()
         self.filesList.addItem(QListWidgetItem('No files'))
-        self.filesList.itemDoubleClicked.connect(self.openFileItem)
+        self.filesList.itemDoubleClicked.connect(lambda item: Util.openFileItem(self.get_path(), item))
         # self.filesList.setVerticalScrollBar(QScrollBar())
         # self.filesList.setHorizontalScrollBar(QScrollBar())
 
@@ -217,6 +214,15 @@ class InputTabWidget(QWidget):
                 self.window.calcRatios(path)
                 self.addRatios()
                 self.setFilesBox(path)
+                if len(self.runListeners) > 0:
+                    for listener in self.runListeners:
+                        listener.notify()
+
+    def addRunListener(self, listener):
+        self.runListeners.append(listener)
+
+    def get_path(self):
+        return self.dirNameEdit.text()
 
     def setDirectory(self):
         path = str(QFileDialog.getExistingDirectory(self, 'Select data directory'))
@@ -241,11 +247,6 @@ class InputTabWidget(QWidget):
 
         for file in files['data'] + files['blank'] + files['yhasu'] + files['yhasth'] + files['hf']:
             self.filesList.addItem(QListWidgetItem(file))
-
-    def openFileItem(self, item):
-        itemPath = os.path.join(self.dirNameEdit.text(), item.text())
-        if os.path.isfile(itemPath):
-            os.system("notepad.exe {}".format(itemPath))
 
     def loadConstants(self):
         options = QFileDialog.Options()
@@ -285,8 +286,7 @@ class InputTabWidget(QWidget):
             'Yield_U': float(self.customTable.item(0, 1).text()),
             'Yield_Th': float(self.customTable.item(1, 1).text()),
             'Gain': float(self.customTable.item(2, 1).text()),
-            'Tail shift': self.tailShiftCheckBox.isChecked(),
-            'Use mean': self.meanMedianCheckBox.isChecked()
+            'Tail shift': self.tailShiftCheckBox.isChecked()
         }
         return specific
 

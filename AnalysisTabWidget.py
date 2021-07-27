@@ -4,10 +4,9 @@ from PyQt5 import QtGui
 import os
 from DataFrameModel import DataFrameModel
 from MetadataDialog import MetadataDialog
-import pandas as pd
 
 
-class AnalysisTabWidget(QLabel):
+class AnalysisTabWidget(QWidget):
     def __init__(self, window, ratioBuilder, analyzer):
         super(AnalysisTabWidget, self).__init__()
         self.window = window

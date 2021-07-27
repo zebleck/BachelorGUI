@@ -78,3 +78,9 @@ def save_array(arr, path, name):
     with open(os.path.join(path, name + '.txt'), 'w') as file:
         for line in arr:
             file.write(str(line) + '\n')
+
+
+def openFileItem(path, item):
+    itemPath = os.path.join(path, item.text())
+    if os.path.isfile(itemPath):
+        os.system("notepad.exe {}".format(itemPath))

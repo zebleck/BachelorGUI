@@ -9,8 +9,8 @@ def getFiles(path):
 
     data = glob.glob('.\\*.exp') + glob.glob('data\*.exp')
     blanks = glob.glob('.\\*blk*.exp') + glob.glob('blank\*blk*.exp')
-    yhasu = glob.glob('.\\*yhasU.exp') + glob.glob('yhas_u\*yhasU.exp')
-    yhasth = glob.glob('.\\*yhasTh.exp') + glob.glob('yhas_th\*yhasTh.exp')
+    yhasu = glob.glob('.\\*yhasU*.exp') + glob.glob('yhas_u\*yhasU*.exp')
+    yhasth = glob.glob('.\\*yhasTh*.exp') + glob.glob('yhas_th\*yhasTh*.exp')
     hf = glob.glob('.\\*hf*.exp') + glob.glob('hf\*hf*.exp')
 
     files = {'data': data, 'blank': blanks, 'yhasth': yhasth, 'yhasu': yhasu, 'hf': hf}
