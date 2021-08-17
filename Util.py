@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import os
 import numpy as np
+import xlrd
 
 
 def load_constants(path):
@@ -16,6 +17,33 @@ def load_constants(path):
     else:
         constants['type'] = 'stalag'
     return constants
+    
+    
+def load_ratios(path):
+    folder_data = os.path.join(path, 'data')
+    if os.path.isdir(folder_data):
+        list_data = os.listdir(folder_data)
+        names_data = np.sort(np.array(list_data))
+
+        rbook = xlrd.open_workbook(os.path.join(path, 'Ratios.xlsx'))
+
+        sheet = rbook.sheet_by_name('Ratios')
+
+        ratios_dict = {}
+
+        for col in range(1, sheet.ncols):
+            key = sheet.cell(0, col).value
+            ratios_dict[key] = []
+            
+            for row in range(1, sheet.nrows):
+                try:
+                    ratios_dict[key].append(float(sheet.cell(row, col).value))
+                except:
+                    ratios_dict[key].append(sheet.cell(row, col).value)
+        
+        ratios = pd.DataFrame(ratios_dict, index=names_data)
+    
+        return ratios
 
 
 def get_standard_number_from_df(df):

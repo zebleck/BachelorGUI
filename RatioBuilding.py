@@ -794,6 +794,8 @@ class RatioBuilder:
                                 index=names_data)
 
         datacorr = self.ratios.copy()
+        print(self.ratios)
+        print(self.labNrs)
         datacorr.insert(0, 'Lab. #', self.labNrs)
 
         writer = ExcelWriter(self.data_root_folder + '\\Ratios.xlsx', engine='xlsxwriter')

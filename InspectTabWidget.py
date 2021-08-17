@@ -244,8 +244,6 @@ class InspectTabWidget(QWidget):
             X /= mean
             mean = 1
 
-        print(X, mean, std)
-
         linePen = pg.mkPen(color=(0, 0, 150), style=Qt.DashLine)
         topLine = pg.InfiniteLine(pos=mean + 2 * std, angle=0, pen=linePen)
         meanLine = pg.InfiniteLine(pos=mean, angle=0, pen=linePen)

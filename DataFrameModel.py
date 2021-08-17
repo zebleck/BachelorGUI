@@ -7,6 +7,7 @@ class DataFrameModel(QtCore.QAbstractTableModel):
 
     def __init__(self, data, standards=None, showIndex=True):
         QtCore.QAbstractTableModel.__init__(self)
+        data = data.copy()
         data.index.name = ''
         self.index = data.index
         if showIndex:
