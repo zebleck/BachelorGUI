@@ -1,7 +1,9 @@
+import json
 import os
 import shutil
 import glob
 import re
+
 
 def getFiles(path):
     old_path = os.getcwd()
@@ -21,27 +23,32 @@ def getFiles(path):
 
     return files
 
+
 def willFilesBeMoved(path):
     old_path = os.getcwd()
     os.chdir(path)
 
-    if len(glob.glob('.\\*.exp')+glob.glob('.\\*blk*.exp')+glob.glob('.\\*yhasU.exp')+glob.glob('.\\*yhasTh.exp')+glob.glob('.\\*hf*.exp')) > 0:
+    if len(glob.glob('.\\*.exp') + glob.glob('.\\*blk*.exp') + glob.glob('.\\*yhasU.exp') + glob.glob(
+            '.\\*yhasTh.exp') + glob.glob('.\\*hf*.exp')) > 0:
         os.chdir(old_path)
         return True
     else:
         os.chdir(old_path)
         return False
+
 
 def willFilesBeDeleted(path):
     old_path = os.getcwd()
     os.chdir(path)
 
-    if len(glob.glob('.\\*.TDT')+glob.glob('.\\*.dat')+glob.glob('.\\*.log')+glob.glob('.\\*.ini')+glob.glob('.\\*.TXT')) > 0:
+    if len(glob.glob('.\\*.TDT') + glob.glob('.\\*.dat') + glob.glob('.\\*.log') + glob.glob('.\\*.ini') + glob.glob(
+            '.\\*.TXT')) > 0:
         os.chdir(old_path)
         return True
     else:
         os.chdir(old_path)
         return False
+
 
 def findStandardNumber(path):
     old_path = os.getcwd()
@@ -57,14 +64,26 @@ def findStandardNumber(path):
     else:
         return max(set(data), key=data.count)
 
+
 def getLabNrsFromList(filenameList):
-    labNrs = re.split(r'\d+(?!\.|\-)\D+', ''.join(filenameList))[1:]
-    # remove ''
-    labNrs = [val for val in labNrs if val != '']
-    # remove '.exp'
-    labNrs = [labNr.replace('.exp', '') for labNr in labNrs]
+    labNrs = [re.search('(\d+)(\.exp)', file).group(1) for file in filenameList]
 
     return labNrs
+
+
+def getLabNrRange(path):
+    standard = findStandardNumber(path)
+    if standard is not None:
+        standard = int(standard)
+
+    labNrs = getLabNrsFromList(getFiles(path)['data'])
+
+    labNrs = [int(nr) for nr in labNrs]
+    # remove standard
+    if standard is not None:
+        labNrs = [nr for nr in labNrs if nr != standard]
+    return [min(labNrs), max(labNrs)]
+
 
 def createDataFolders(path):
     old_path = os.getcwd()
@@ -104,34 +123,81 @@ def createDataFolders(path):
 
     os.chdir(old_path)
 
+
 def removeUnnecessaryFiles(path):
     old_path = os.getcwd()
     os.chdir(path)
 
-    files = glob.glob('.\\*.TDT')+glob.glob('.\\*.dat')+glob.glob('.\\*.log')+glob.glob('.\\*.ini')+glob.glob('.\\*.TXT')
+    files = glob.glob('.\\*.TDT') + glob.glob('.\\*.dat') + glob.glob('.\\*.log') + glob.glob('.\\*.ini') + glob.glob(
+        '.\\*.TXT')
     for file in files:
         os.remove(file)
 
     os.chdir(old_path)
+
 
 '''
     used for debugging
     specifically investigation of uncorrected age being lower than corrected age in some cases
 '''
 
+
 def writeList(path, filename, list):
     with open(os.path.join(path, filename), 'w') as file:
         for list_count, sub_list in enumerate(list):
             for i, item in enumerate(sub_list):
                 file.write('{}'.format(item))
-                if i < len(sub_list)-1:
+                if i < len(sub_list) - 1:
                     file.write(',')
-            if list_count < len(list)-1:
+            if list_count < len(list) - 1:
                 file.write('\n')
         file.close()
+
 
 def writeLineByLine(path, filename, list):
     with open(os.path.join(path, filename), 'w') as file:
         for element in list:
             file.write('{}\n'.format(element))
         file.close()
+
+
+def findCurrentOutputNumber(path):
+    maxNumber = 0
+    for file in [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]:
+        reResult = re.findall('.*(\d+)\.xlsx', file)
+        if reResult:
+            maxNumber = max(maxNumber, int(reResult[0]))
+    return maxNumber
+
+
+def tryCreateOutputFolder(dataPath, outputPath, outputDict):
+    folderName = 'PUA_{}-{} {}'.format(outputDict['min_lab_nr'], outputDict['max_lab_nr'], outputDict['name'])
+    dataOutputPath = os.path.join(outputPath, folderName)
+
+    # Get connections dictionary
+    connectionsPath = os.path.join(outputPath, 'connections.json')
+    if os.path.exists(connectionsPath):
+        with open(connectionsPath, 'r') as file:
+            connectionsDict = json.loads(file.read().replace('\n', ''))
+    else:
+        connectionsDict = {}
+
+    baseDataFolder = baseName(dataPath)
+
+    if baseDataFolder in connectionsDict:
+        os.rename(os.path.join(outputPath, connectionsDict[baseDataFolder]), dataOutputPath)
+    else:
+        if not os.path.exists(dataOutputPath):
+            os.mkdir(dataOutputPath)
+    dict_path = os.path.join(dataOutputPath, 'info.json')
+    with open(dict_path, 'w') as file:
+        json.dump(outputDict, file, indent=4)
+
+    connectionsDict[baseDataFolder] = folderName
+
+    with open(connectionsPath, 'w') as file:
+        json.dump(connectionsDict, file, indent=4)
+
+
+def baseName(path):
+    return os.path.basename(os.path.normpath(path))

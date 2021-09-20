@@ -6,6 +6,8 @@ from pandas import ExcelWriter
 import DataFolderUtil
 from random import random
 import Util
+import Globals
+import os
 
 import ExcelFormatter
 
@@ -15,6 +17,10 @@ class Analyzer:
         self.data_root_folder = None
         self.calculate_age_errors = True
         self.write_results_file = True
+        self.settings = None
+
+    def set_settings(self, settings):
+        self.settings = settings
 
     def set_path(self, path):
         self.data_root_folder = path
@@ -180,7 +186,6 @@ class Analyzer:
         # Convert laboratory numbers to int if possible
         metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
 
-
         # Create dataframe
         self.metadata = pd.DataFrame(metadata_dict, index=indices)
 
@@ -197,8 +202,7 @@ class Analyzer:
                                     'Blank 232 (ng)': blank232,
                                     'Ch. Blank 230 (fg)': chBlank230}, index=indices)
 
-
-    def analyze(self, ratios, filename='Results'):
+    def analyze(self, ratios, filename='Results', options_dict=None, output_path=None):
         ratios = ratios.copy()
 
         # Add additional row if last standard was not measured
@@ -232,7 +236,9 @@ class Analyzer:
         a234238 = ratios['Ratio 234/238'] * self.lambda234 / self.lambda238
         a234238_err = a234238 * ratios['Error (%) 234/238'] / 100
         a234238_corr = [a234238[i] * 2 / (a234238[i - 1] + a234238[i + 1])
-                        if (0 < i < len(a234238) - 1 and self.standard is not None and self.standard not in ratios.index[i]) else a234238[i]
+                        if (
+                    0 < i < len(a234238) - 1 and self.standard is not None and self.standard not in ratios.index[
+                i]) else a234238[i]
                         for i
                         in range(len(a234238))]
         a234238_corr_err = a234238_corr * ratios['Error (%) 234/238'] / 100
@@ -262,7 +268,9 @@ class Analyzer:
         a230238 = th230dpmg / u238dpmg
         a230238_err = a230238 * np.sqrt((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2)
         a230238_corr = [a230238[i] * 2 / (a230238[i - 1] + a230238[i + 1])
-                        if (0 < i < len(a230238) - 1 and self.standard is not None and self.standard not in ratios.index[i]) else a230238[i]
+                        if (
+                    0 < i < len(a230238) - 1 and self.standard is not None and self.standard not in ratios.index[
+                i]) else a230238[i]
                         for i
                         in range(len(a230238))]
         a230238_corr_err = a230238_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
@@ -279,7 +287,6 @@ class Analyzer:
         # corrected Ages
         age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
                     range(len(a230238_corr))]
-
 
         # Age errors
 
@@ -503,11 +510,22 @@ class Analyzer:
         dfConstants = dfConstants.transpose()
         dfConstants.reset_index(level=0, inplace=True)
 
+        dfOptions = pd.DataFrame(options_dict, index=[''])
+        dfOptions = dfOptions.transpose()
+        dfOptions.reset_index(level=0, inplace=True)
+
+        results_dict = {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants, 'Options': dfOptions}
+
         if self.write_results_file:
             # Write Results file
             writer = ExcelWriter(self.data_root_folder + '\\{}.xlsx'.format(filename), engine='xlsxwriter')
-            ExcelFormatter.format(writer, {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants})
+            ExcelFormatter.format(writer, results_dict)
             writer.save()
+
+            if output_path is not None:
+                writer = ExcelWriter(os.path.join(output_path, '{} {}.xlsx'.format(filename, Util.sortableTimestamp())), engine='xlsxwriter')
+                ExcelFormatter.format(writer, results_dict)
+                writer.save()
 
     def thu_alter_kombi(self, a230238, a234238):
 
@@ -775,20 +793,20 @@ class Analyzer:
         else:
             return np.sqrt(((au * np.exp(-self.lambda230 * aw * 1000)) / (self.lambda230 * (
                     np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                    -(self.lambda230 - self.lambda234) * aw * 1000)
+                -(self.lambda230 - self.lambda234) * aw * 1000)
                     - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * at ** 2 + (
-                    (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
-                    self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
-                    (aj / 1000) * np.exp(
-                    -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
-                    -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
-                    (self.lambda230 / (self.lambda230 - self.lambda234))
-                    * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
-                    self.lambda230 * (
-                    np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                    -(self.lambda230 - self.lambda234) * aw * 1000)
-                    - as_ * au * np.exp(
-                    -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
+                                   (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
+                                   self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
+                                                     (aj / 1000) * np.exp(
+                                       -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
+                                       -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
+                                   (self.lambda230 / (self.lambda230 - self.lambda234))
+                                   * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
+                                           self.lambda230 * (
+                                           np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
+                                       -(self.lambda230 - self.lambda234) * aw * 1000)
+                                           - as_ * au * np.exp(
+                                       -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
                     self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                    -(self.lambda230 - self.lambda234) * aw * 1000)
-                    - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000
+                -(self.lambda230 - self.lambda234) * aw * 1000)
+                                      - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000

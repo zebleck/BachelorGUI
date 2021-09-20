@@ -1,6 +1,7 @@
 import os
 import json
 
+
 class Settings:
     def __init__(self):
         self.settingsPath = os.path.join(os.getcwd(), 'settings.settings')
@@ -41,3 +42,12 @@ class Settings:
         with open(os.path.join(os.getcwd(), 'settings.settings'), 'w') as file:
             json.dump({'default_constants': self.constantsFileEdit.text()}, file, indent=4)
         self.defaultConstantsButton.setEnabled(False)
+
+    def append(self, key, item, position=None):
+        if self.__getitem__(key) == '':
+            self.dict[key] = []
+        if position is not None:
+            self.dict[key].insert(position, item)
+        else:
+            self.dict[key].append(item)
+        self.save()

@@ -4,6 +4,7 @@ from PyQt5.QtGui import QIcon, QKeySequence
 import sys
 import os
 
+import Globals
 from Analyzer import Analyzer
 from Inspector import Inspector
 from InputTabWidget import InputTabWidget
@@ -24,7 +25,7 @@ class Window(QtWidgets.QMainWindow):
         super(Window, self).__init__()
         self.setGeometry(50, 50, 1200, 1000)
         self.setWindowTitle("U/Th Data Analysis")
-        self.setWindowIcon(QIcon('logo/PUA_logo_HiRes.png'))
+        self.setWindowIcon(QIcon(':/icons/PUA_logo.ico'))
 
         self.settings = Settings()
 
@@ -115,6 +116,8 @@ class Window(QtWidgets.QMainWindow):
         self.ratioBuilder.set_path(path)
         constants = Util.load_constants(self.inputTab.get_constants_path())
         self.ratioBuilder.set_constants(constants)
+        #layout = Util.load_json(self.inputTab.get_layout_path())
+        #self.ratioBuilder.set_layout(layout)
         self.ratioBuilder.set_options(mean_option=self.inspectTab.mean_option,
                                       dev_option=self.inspectTab.dev_option)
         self.ratioBuilder.set_specific_constants(self.inputTab.get_specific_constants())
@@ -125,8 +128,15 @@ class Window(QtWidgets.QMainWindow):
         constants = Util.load_constants(self.inputTab.get_constants_path())
         self.analyzer.set_constants(constants)
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
+        self.analyzer.set_settings(self.settings)
+
+        options_dict = {Globals.MEAN_METHOD: Util.keyByValue(self.inspectTab.mean_option_dict, self.ratioBuilder.mean_option),
+                        Globals.DEV_METHOD: Util.keyByValue(self.inspectTab.dev_option_dict, self.ratioBuilder.dev_option)}
+
         try:
-            self.analyzer.analyze(self.ratioBuilder.ratios)
+            self.analyzer.analyze(self.ratioBuilder.ratios,
+                                  options_dict=options_dict,
+                                  output_path=self.inputTab.getDataOutputPath())
             self.analysisTab.display()
         except PermissionError:
             self.analysisTab.display()

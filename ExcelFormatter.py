@@ -17,7 +17,7 @@ def format(writer, dfs):
     superscript = writer.book.add_format({'bold': True, 'font_script': 1, 'font_name': 'Arial', 'font_size': 11})
     subscript = writer.book.add_format({'bold': True, 'font_script': 2, 'font_name': 'Arial', 'font_size': 11})
     for sheetname, df in dfs.items():  # loop through `dict` of dataframes
-        if sheetname == 'Constants':
+        if sheetname == 'Constants' or sheetname == 'Options':
             df.to_excel(writer, sheet_name=sheetname, index=False, header=False)
             worksheet = writer.sheets[sheetname]
 

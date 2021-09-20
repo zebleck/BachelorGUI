@@ -14,8 +14,10 @@ class ConstantsDialog(QDialog):
 
         if path is None:
             self.setWindowTitle('Set new constants')
+            self.setWindowIcon(QtGui.QIcon(':/icons/file.png'))
         else:
             self.setWindowTitle('Edit constants')
+            self.setWindowIcon(QtGui.QIcon(':/icons/edit.png'))
 
         self.initUI()
         self.setEdits()
@@ -72,20 +74,20 @@ class ConstantsDialog(QDialog):
         ratiosLabel = QLabel('For Ratios:')
         ratiosLabel.setFont(font)
         ratiosLayout.addRow(ratiosLabel)
-        ratiosLayout.addRow(QLabel('Mf 234 / 238:'), self.mf48Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 236:'), self.mf36Edit)
-        ratiosLayout.addRow(QLabel('Mf 235 / 236:'), self.mf56Edit)
-        ratiosLayout.addRow(QLabel('Mf 236 / 238:'), self.mf68Edit)
-        ratiosLayout.addRow(QLabel('Mf 229 / 232:'), self.mf92Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 238:'), self.mf38Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 235:'), self.mf35Edit)
-        ratiosLayout.addRow(QLabel('Mf 234 / 233:'), self.mf43Edit)
-        ratiosLayout.addRow(QLabel('Mf 234 / 235:'), self.mf45Edit)
-        ratiosLayout.addRow(QLabel('Mf 230 / 229:'), self.mf09Edit)
-        ratiosLayout.addRow(QLabel('Mf 232 / 239:'), self.mf29Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 234:'), self.mf34Edit)
-        ratiosLayout.addRow(QLabel('Mf 235 / 238:'), self.mf58Edit)
-        ratiosLayout.addRow(QLabel('Mf 230 / 232:'), self.mf02Edit)
+        ratiosLayout.addRow(QLabel('Mf 234 / 238'), self.mf48Edit)
+        ratiosLayout.addRow(QLabel('Mf 233 / 236'), self.mf36Edit)
+        ratiosLayout.addRow(QLabel('Mf 235 / 236'), self.mf56Edit)
+        ratiosLayout.addRow(QLabel('Mf 236 / 238'), self.mf68Edit)
+        ratiosLayout.addRow(QLabel('Mf 229 / 232'), self.mf92Edit)
+        ratiosLayout.addRow(QLabel('Mf 233 / 238'), self.mf38Edit)
+        ratiosLayout.addRow(QLabel('Mf 233 / 235'), self.mf35Edit)
+        ratiosLayout.addRow(QLabel('Mf 234 / 233'), self.mf43Edit)
+        ratiosLayout.addRow(QLabel('Mf 234 / 235'), self.mf45Edit)
+        ratiosLayout.addRow(QLabel('Mf 230 / 229'), self.mf09Edit)
+        ratiosLayout.addRow(QLabel('Mf 232 / 239'), self.mf29Edit)
+        ratiosLayout.addRow(QLabel('Mf 233 / 234'), self.mf34Edit)
+        ratiosLayout.addRow(QLabel('Mf 235 / 238'), self.mf58Edit)
+        ratiosLayout.addRow(QLabel('Mf 230 / 232'), self.mf02Edit)
         ratiosLayout.addRow(QLabel('\u03BB<sup>230</sup>'), self.l230Edit)
         ratiosLayout.addRow(QLabel('\u03BB<sup>232</sup>'), self.l232Edit)
         ratiosLayout.addRow(QLabel('\u03BB<sup>234</sup>'), self.l234Edit)
@@ -225,7 +227,6 @@ class ConstantsDialog(QDialog):
             self.standardTriSp13.setText(str(constants['standardTriSp13']))
 
     def save(self):
-        fileName = None
 
         if self.path is None:
             options = QFileDialog.Options()

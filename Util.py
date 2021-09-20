@@ -1,9 +1,11 @@
+from datetime import datetime
 import ntpath
 import json
 import pandas as pd
 import os
 import numpy as np
 import xlrd
+from PyQt5.QtGui import QFontMetrics
 
 
 def load_constants(path):
@@ -17,6 +19,11 @@ def load_constants(path):
     else:
         constants['type'] = 'stalag'
     return constants
+
+def load_json(path):
+    with open(path, 'r') as file:
+        _dict = json.loads(file.read().replace('\n', ''))
+    return _dict
     
     
 def load_ratios(path):
@@ -112,3 +119,16 @@ def openFileItem(path, item):
     itemPath = os.path.join(path, item.text())
     if os.path.isfile(itemPath):
         os.system("notepad.exe {}".format(itemPath))
+
+
+def keyByValue(_dict, value):
+    return dict(zip(_dict.values(), _dict.keys()))[value]
+
+
+def sortableTimestamp():
+    return datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+
+def setHeight(edit, nRows):
+    RowHeight = QFontMetrics(edit.font()).lineSpacing()
+    edit.setFixedHeight(nRows * RowHeight)

@@ -1,6 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QLineEdit, QLabel, QPushButton, QFileIconProvider, QMessageBox, QSlider, \
-                            QTableWidget, QTableWidgetItem, QHeaderView, QListWidget, QListWidgetItem, QFileDialog, QHBoxLayout, QCheckBox, \
-                            QTableView
+import json
+
+from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QLineEdit, QLabel, QPushButton, QFileIconProvider, \
+    QMessageBox, QSlider, \
+    QTableWidget, QTableWidgetItem, QHeaderView, QListWidget, QListWidgetItem, QFileDialog, QHBoxLayout, QCheckBox, \
+    QTableView, QStyle
 from PyQt5.QtCore import Qt
 import pyqtgraph as pg
 from pyqtgraph import QtGui
@@ -13,9 +16,15 @@ import MathUtil
 from DataFrameModel import DataFrameModel
 import pandas as pd
 import Util
+from DetectorLayoutDialog import DetectorLayoutDialog
+import Globals
+from DetectorLayoutDialogOld import DetectorLayoutDialogOld
+import resources
+from OutputSettingsDialog import OutputSettingsDialog
 
 
 class InputTabWidget(QWidget):
+
     def __init__(self, window, ratioBuilder):
         super(InputTabWidget, self).__init__()
         self.window = window
@@ -44,42 +53,104 @@ class InputTabWidget(QWidget):
         self.settingsBox = QGroupBox("Settings")
         self.settingsBox.setMaximumHeight(400)
 
-        # Directory label and edit widget
-        self.dirNameEdit = QLineEdit()
-        dirNameLabel = QLabel('&Directory path:')
-        dirNameLabel.setBuddy(self.dirNameEdit)
-        # Directory button
-        self.dirButton = QPushButton()
-        self.dirButton.setIcon(QFileIconProvider().icon(QFileIconProvider.Folder))
-        self.dirButton.clicked.connect(self.setDirectory)
-
-        # Run button
-        runButton = QPushButton('Run')
-        runButton.clicked.connect(self.runEvent)
-
         # Specific constants section
         constantsWidget = QWidget()
         constantsHLayout = QHBoxLayout()
         self.constantsFileEdit = QLineEdit()
-        self.constantsFileEdit.setText(self.window.settings['default_constants'])
+        self.constantsFileEdit.setText(self.window.settings[Globals.DEFAULT_CONSTANTS_KEY])
+        self.constantsFileEdit.textChanged.connect(self.updateSettings)
         self.constantsFileEdit.setEnabled(False)
         self.newConstantsButton = QPushButton('New')
         self.editConstantsButton = QPushButton('Edit')
         self.loadConstantsButton = QPushButton('Load')
-        self.defaultConstantsButton = QPushButton('Set as default')
         self.newConstantsButton.clicked.connect(self.newConstants)
         self.editConstantsButton.clicked.connect(self.editConstants)
         self.loadConstantsButton.clicked.connect(self.loadConstants)
-        self.defaultConstantsButton.clicked.connect(self.setConstantsAsDefault)
-        self.defaultConstantsButton.setEnabled(False)
 
-        constantsHLayout.addWidget(QLabel('Constants:'))
+        constantsHLayout.addWidget(QLabel('Constants'))
         constantsHLayout.addWidget(self.constantsFileEdit)
         constantsHLayout.addWidget(self.newConstantsButton)
         constantsHLayout.addWidget(self.loadConstantsButton)
         constantsHLayout.addWidget(self.editConstantsButton)
-        constantsHLayout.addWidget(self.defaultConstantsButton)
         constantsWidget.setLayout(constantsHLayout)
+
+        # Detector layout section
+        # detectorWidget = QWidget()
+        # detectorHLayout = QHBoxLayout()
+        # self.detectorFileEdit = QLineEdit()
+        # self.detectorFileEdit.setText(self.window.settings[Globals.LAYOUT_KEY])
+        # self.detectorFileEdit.setEnabled(False)
+        # self.newLayoutButton = QPushButton('New')
+        # self.editLayoutButton = QPushButton('Edit')
+        # self.loadLayoutButton = QPushButton('Load')
+        # self.newLayoutButton.clicked.connect(self.newDLayout)
+        # self.newLayoutButton.clicked.connect(self.updateSettings)
+        # self.editLayoutButton.clicked.connect(self.editLayout)
+        # self.loadLayoutButton.clicked.connect(self.loadLayout)
+        # self.editLayoutButton.clicked.connect(self.editConstants)
+        # self.loadLayoutButton.clicked.connect(self.loadConstants)
+        # self.defaultConstantsButton.clicked.connect(self.setConstantsAsDefault)
+        # self.defaultConstantsButton.setEnabled(False)
+        #
+        # detectorHLayout.addWidget(QLabel('Detector layout:'))
+        # detectorHLayout.addWidget(self.detectorFileEdit)
+        # detectorHLayout.addWidget(self.newLayoutButton)
+        # detectorHLayout.addWidget(self.loadLayoutButton)
+        # detectorHLayout.addWidget(self.editLayoutButton)
+        # detectorWidget.setLayout(detectorHLayout)
+
+        # Directory label and edit widget
+        dirHLayout = QHBoxLayout()
+        self.dirNameEdit = QLineEdit()
+        dirNameLabel = QLabel('&Directory path')
+        dirNameLabel.setBuddy(self.dirNameEdit)
+        # Directory button
+        self.dirButton = QPushButton()
+        self.dirButton.setIcon(QtGui.QIcon(":/icons/folder.png"))
+        self.dirButton.clicked.connect(self.setDirectory)
+        # Run button
+        runButton = QPushButton('Run')
+        runButton.clicked.connect(self.runEvent)
+        dirHLayout.addWidget(dirNameLabel)
+        dirHLayout.addWidget(self.dirNameEdit)
+        dirHLayout.addWidget(self.dirButton)
+        dirHLayout.addWidget(runButton)
+        dirHLayoutWidget = QWidget()
+        dirHLayoutWidget.setLayout(dirHLayout)
+
+        # Save label and edit widget
+        outputLayout = QHBoxLayout()
+        self.outputDirNameEdit = QLineEdit()
+        self.outputDirNameEdit.setText(self.window.settings[Globals.OUTPUT_KEY])
+        self.outputDirNameEdit.textChanged.connect(self.updateSettings)
+        self.outputDirNameEdit.setEnabled(False)
+        outputDirNameLabel = QLabel('&Output path')
+        outputDirNameLabel.setBuddy(self.outputDirNameEdit)
+        self.outputDirButton = QPushButton()
+        self.outputDirButton.setIcon(QtGui.QIcon(":/icons/folder.png"))
+        self.outputDirButton.clicked.connect(self.setOutputDirectory)
+        self.openOutputDirButton = QPushButton()
+        self.openOutputDirButton.setIcon(QtGui.QIcon(":/icons/open_folder.png"))
+        self.openOutputDirButton.clicked.connect(self.openOutputDirectory)
+        self.statusOutputDir = QPushButton()
+        self.statusOutputDir.setIcon(QtGui.QIcon(":/icons/cross.png"))
+        self.statusOutputDir.clicked.connect(self.openStatusMessage)
+        #self.statusOutputDir.setEnabled(False)
+        self.settingsOutputDirButton = QPushButton()
+        self.settingsOutputDirButton.setIcon(QtGui.QIcon(":/icons/settings.png"))
+        self.settingsOutputDirButton.clicked.connect(self.openOutputSettings)
+        outputLayout.addWidget(outputDirNameLabel)
+        outputLayout.addWidget(self.outputDirNameEdit)
+        outputLayout.addWidget(self.outputDirButton)
+        outputLayout.addWidget(self.openOutputDirButton)
+        outputLayout.addWidget(self.settingsOutputDirButton)
+        outputLayout.addWidget(self.statusOutputDir)
+        outputDirHLayoutWidget = QWidget()
+        outputDirHLayoutWidget.setLayout(outputLayout)
+
+        # Connect output status listeners
+        self.dirNameEdit.textChanged.connect(self.checkOutputStatus)
+        self.outputDirNameEdit.textChanged.connect(self.checkOutputStatus)
 
         # Custom constants label and table
         tablesLayout = QGridLayout()
@@ -181,12 +252,11 @@ class InputTabWidget(QWidget):
 
         # Set main settings layout
         layout = QGridLayout()
-        layout.addWidget(dirNameLabel, 0, 0)
-        layout.addWidget(self.dirNameEdit, 0, 1)
-        layout.addWidget(self.dirButton, 0, 2)
-        layout.addWidget(runButton, 0, 3)
-        layout.addWidget(constantsWidget, 1, 0, 1, 4)
-        layout.addWidget(tablesLayoutWidget, 2, 0, 1, 4)
+        layout.addWidget(dirHLayoutWidget, 0, 0, 1, 2)
+        layout.addWidget(constantsWidget, 1, 0, 1, 2)
+        layout.addWidget(outputDirHLayoutWidget, 2, 0)
+        #layout.addWidget(detectorWidget, 2, 1)
+        layout.addWidget(tablesLayoutWidget, 3, 0, 1, 2)
 
         self.settingsBox.setLayout(layout)
 
@@ -229,11 +299,87 @@ class InputTabWidget(QWidget):
         if not os.path.isdir(path):
             return
 
-        path = os.path.normpath(path)
+        #path = os.path.normpath(path)
         if path != self.dirNameEdit.text():
             self.clear()
             self.dirNameEdit.setText(path)
             self.setFilesBox(path)
+
+    def setOutputDirectory(self):
+        path = str(QFileDialog.getExistingDirectory(self, 'Select output saving directory'))
+        if not os.path.isdir(path):
+            return
+
+        #path = os.path.normpath(path)
+        self.outputDirNameEdit.setText(path)
+
+    def openOutputDirectory(self):
+        path = self.outputDirNameEdit.text()
+        if not os.path.isdir(path):
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid directory.', QMessageBox.Ok)
+            return
+        os.startfile(path)
+
+    def openOutputSettings(self):
+        data_path = self.dirNameEdit.text()
+        output_path = self.outputDirNameEdit.text()
+        if not os.path.isdir(data_path):
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid data directory.', QMessageBox.Ok)
+            return
+        if not os.path.isdir(output_path):
+            QMessageBox.critical(self, 'Not valid', 'Please select a valid output directory.', QMessageBox.Ok)
+            return
+        dialog = OutputSettingsDialog(data_path, output_path)
+        if dialog.exec_():
+            try:
+                DataFolderUtil.tryCreateOutputFolder(data_path, output_path, dialog.outputDict)
+                self.checkOutputStatus()
+            except PermissionError:
+                error_dialog = QtWidgets.QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setWindowTitle('Permission error')
+                error_dialog.setText(
+                    'Could not save output settings. Please close all related files or folders.')
+                error_dialog.exec_()
+
+    def getDataOutputPath(self):
+        outputPath = self.outputDirNameEdit.text()
+        connectionsPath = os.path.join(outputPath, 'connections.json')
+        if os.path.exists(connectionsPath):
+            with open(connectionsPath, 'r') as file:
+                connectionsDict = json.loads(file.read().replace('\n', ''))
+                baseName = DataFolderUtil.baseName(self.dirNameEdit.text())
+                if baseName in connectionsDict:
+                    return os.path.join(outputPath, connectionsDict[baseName])
+        return None
+
+    def openStatusMessage(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        if self.checkOutputStatus():
+            msg.setText("Die Output-Einstellungen sind richtig konfiguriert.")
+        else:
+            msg.setText("Die Output-Einstellungen sind nicht richtig konfiguriert.")
+        msg.setWindowTitle("Status des Output-Ordners")
+        msg.exec_()
+
+    def checkOutputStatus(self):
+        outputPath = self.outputDirNameEdit.text()
+        connectionsPath = os.path.join(outputPath, 'connections.json')
+        if os.path.exists(connectionsPath):
+            with open(connectionsPath, 'r') as file:
+                connectionsDict = json.loads(file.read().replace('\n', ''))
+                baseName = DataFolderUtil.baseName(self.dirNameEdit.text())
+                if baseName in connectionsDict:
+                    self.statusOutputDir.setIcon(QtGui.QIcon(':icons/checkmark.png'))
+                    return True
+        self.statusOutputDir.setIcon(QtGui.QIcon(':icons/cross.png'))
+        return False
+
+    def updateSettings(self):
+        self.window.settings[Globals.DEFAULT_CONSTANTS_KEY] = self.constantsFileEdit.text()
+        self.window.settings[Globals.OUTPUT_KEY] = self.outputDirNameEdit.text()
+        #self.window.settings[Globals.LAYOUT_KEY] = self.detectorFileEdit.text()
 
     def setFilesBox(self, path):
         self.filesList.clear()
@@ -256,29 +402,37 @@ class InputTabWidget(QWidget):
         if not os.path.isfile(fileName):
             return
 
-        if fileName != self.window.settings['default_constants']:
-            self.defaultConstantsButton.setEnabled(True)
-        else:
-            self.defaultConstantsButton.setEnabled(False)
-
         self.constantsFileEdit.setText(fileName)
 
     def newConstants(self):
         dialog = ConstantsDialog(self)
         dialog.exec_()
 
-        if self.constantsFileEdit.text() != self.window.settings['default_constants']:
-            self.defaultConstantsButton.setEnabled(True)
-        else:
-            self.defaultConstantsButton.setEnabled(False)
+    def newDLayout(self):
+        dialog = DetectorLayoutDialog(self)
+        dialog.exec_()
+
+    def newD2Layout(self):
+        dialog = DetectorLayoutDialogOld(self)
+        dialog.exec_()
+
+    def loadLayout(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self, "Load layout", "",
+                                                  "Layout files (*.layout)", options=options)
+        if not os.path.isfile(fileName):
+            return
+
+        self.detectorFileEdit.setText(fileName)
 
     def editConstants(self):
         dialog = ConstantsDialog(self, self.constantsFileEdit.text())
         dialog.exec_()
 
-    def setConstantsAsDefault(self):
-        self.window.settings['default_constants'] = self.constantsFileEdit.text()
-        self.defaultConstantsButton.setEnabled(False)
+    def editLayout(self):
+        dialog = DetectorLayoutDialog(self, self.detectorFileEdit.text())
+        dialog.exec_()
 
     def get_specific_constants(self):
         specific = {
@@ -292,6 +446,9 @@ class InputTabWidget(QWidget):
 
     def get_constants_path(self):
         return self.constantsFileEdit.text()
+
+    #def get_layout_path(self):
+    #    return self.detectorFileEdit.text()
 
     ''' +-----------------------------+ '''
     ''' |       Overview-Code         | '''

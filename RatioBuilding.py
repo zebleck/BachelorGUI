@@ -94,6 +94,7 @@ class RatioBuilder:
                  tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5]  # Th230 U
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+        data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
         R58d = data35 / data38  # U235/U238 for mass fractionation correction
@@ -794,8 +795,6 @@ class RatioBuilder:
                                 index=names_data)
 
         datacorr = self.ratios.copy()
-        print(self.ratios)
-        print(self.labNrs)
         datacorr.insert(0, 'Lab. #', self.labNrs)
 
         writer = ExcelWriter(self.data_root_folder + '\\Ratios.xlsx', engine='xlsxwriter')
