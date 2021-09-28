@@ -2,7 +2,7 @@ import os
 
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QHBoxLayout, \
-    QRadioButton, QCheckBox, QMessageBox, QFormLayout, QWidget, QPlainTextEdit
+    QRadioButton, QCheckBox, QMessageBox, QFormLayout, QWidget, QPlainTextEdit, QComboBox
 from PyQt5.QtGui import QPixmap, QIntValidator
 from PyQt5.QtCore import Qt
 
@@ -29,9 +29,14 @@ class OutputSettingsDialog(QDialog):
 
     def initUI(self):
         self.nameEdit = QLineEdit()
-        self.typeEdit = QLineEdit()
         self.descriptionEdit = QPlainTextEdit()
         Util.setHeight(self.descriptionEdit, 4)
+
+        #self.typeEdit = QLineEdit()
+        self.typeBox = QComboBox()
+        self.typeBox.addItem('Stalagmit')
+        self.typeBox.addItem('Koralle')
+        self.typeBox.addItem('Authigenes Karbonat')
 
         labNrRange = DataFolderUtil.getLabNrRange(self.data_path)
 
@@ -66,7 +71,7 @@ class OutputSettingsDialog(QDialog):
         layout.setLabelAlignment(Qt.AlignRight)
 
         layout.addRow(QLabel('Bezeichnung'), self.nameEdit)
-        layout.addRow(QLabel('Art des Archivs'), self.typeEdit)
+        layout.addRow(QLabel('Art des Archivs'), self.typeBox)
         layout.addRow(firstLabNrWidget, lastLabNrWidget)
         layout.addRow(lonWidget, latWidget)
         layout.addRow(QLabel('Beschreibung'), self.descriptionEdit)
@@ -89,7 +94,7 @@ class OutputSettingsDialog(QDialog):
                     with open(infoFilePath, 'r') as file:
                         infoDict = json.loads(file.read().replace('\n', ''))
                     self.nameEdit.setText(infoDict['name'])
-                    self.typeEdit.setText(infoDict['type'])
+                    self.typeBox.setCurrentText(infoDict['type'])
                     self.minLabNrEdit.setText(infoDict['min_lab_nr'])
                     self.maxLabNrEdit.setText(infoDict['max_lab_nr'])
                     self.lonEdit.setText(infoDict['lon'])
@@ -99,7 +104,7 @@ class OutputSettingsDialog(QDialog):
     def save(self):
         self.outputDict = {
             'name': self.nameEdit.text(),
-            'type': self.typeEdit.text(),
+            'type': self.typeBox.currentText(),
             'min_lab_nr': self.minLabNrEdit.text(),
             'max_lab_nr': self.maxLabNrEdit.text(),
             'lon': self.lonEdit.text(),
