@@ -18,6 +18,8 @@ import warnings
 import webbrowser
 from Settings import Settings
 
+from ConstantsDialog import loadConstants
+
 
 class Window(QtWidgets.QMainWindow):
 
@@ -114,7 +116,7 @@ class Window(QtWidgets.QMainWindow):
         DataFolderUtil.createDataFolders(path)
         DataFolderUtil.removeUnnecessaryFiles(path)
         self.ratioBuilder.set_path(path)
-        constants = Util.load_constants(self.inputTab.get_constants_path())
+        constants = loadConstants(self.inputTab.get_constants_path())
         self.ratioBuilder.set_constants(constants)
         #layout = Util.load_json(self.inputTab.get_layout_path())
         #self.ratioBuilder.set_layout(layout)
@@ -125,7 +127,7 @@ class Window(QtWidgets.QMainWindow):
 
     def startAnalysis(self, metadatapath):
         self.analyzer.set_path(self.ratioBuilder.data_root_folder)
-        constants = Util.load_constants(self.inputTab.get_constants_path())
+        constants = loadConstants(self.inputTab.get_constants_path())
         self.analyzer.set_constants(constants)
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
         self.analyzer.set_settings(self.settings)

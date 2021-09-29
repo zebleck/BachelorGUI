@@ -8,18 +8,6 @@ import xlrd
 from PyQt5.QtGui import QFontMetrics
 
 
-def load_constants(path):
-    with open(path, 'r') as file:
-        constants = json.loads(file.read().replace('\n', ''))
-    fileName = path_leaf(path)
-    if 'coral' in fileName:
-        constants['type'] = 'coral'
-    elif 'stalag' in fileName:
-        constants['type'] = 'stalag'
-    else:
-        constants['type'] = 'stalag'
-    return constants
-
 def load_json(path):
     with open(path, 'r') as file:
         _dict = json.loads(file.read().replace('\n', ''))

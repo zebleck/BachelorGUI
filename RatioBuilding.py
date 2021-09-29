@@ -54,6 +54,9 @@ class RatioBuilder:
         self.lambda230 = constants['l230']
         self.lambda232 = constants['l232']
 
+        self.th229SubU238 = constants['th229SubU238']
+        self.th230SubU238 = constants['th230SubU238']
+
     def set_specific_constants(self, specific_constants):
         useBlank = specific_constants['Blank']
         if useBlank:
@@ -88,10 +91,10 @@ class RatioBuilder:
 
         data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
-                 datablkm[i, 7] - data[:, 4] * slope229Correction  # Th229
+                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4] # Th229
 
         data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
-                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5]  # Th230 U
+                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:, 4] # Th230 U
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
@@ -166,10 +169,10 @@ class RatioBuilder:
 
         data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
-                 datablkm[i, 7] - data[:, 4] * slope229Correction  # Th229
+                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4] # Th229
 
         data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
-                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5]  # Th230
+                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:, 4] # Th230
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
 
@@ -243,11 +246,11 @@ class RatioBuilder:
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
         data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
-            i, 7] - data[:, 4] * slope229Correction / cps  # Th229
+            i, 7] - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps  # Th229
 
         data30 = data[:, 6] - ThH_plus * data29 * cps * yield_Th - data29 * R30_29 * cps * yield_Th - data[:, 4] * \
                  tail_mat[1] * cps * yield_U - tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[
-                     i, 5]  # Th230
+                     i, 5] - data[:, 4] * self.th230SubU238 # Th230
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[6, i]  # Th232
 
@@ -322,10 +325,10 @@ class RatioBuilder:
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
         data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
-            i, 7] / cps - data[:, 4] * slope229Correction / cps  # Th229
+            i, 7] / cps - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps # Th229
 
         data30 = gain13 * data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat_cup[1] - \
-                 tail_mat_th_cup[1] * data[:, 7] - blk * datablkm[i, 5] / cps  # Th230
+                 tail_mat_th_cup[1] * data[:, 7] - blk * datablkm[i, 5] / cps - data[:, 4] * self.th230SubU238 / cps # Th230
 
         data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
 

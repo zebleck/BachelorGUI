@@ -2,6 +2,55 @@ from PyQt5.QtWidgets import QDialog, QFormLayout, QLabel, QLineEdit, QPushButton
 from PyQt5 import QtGui
 
 import json
+import os
+
+from Util import path_leaf
+
+ratiosConstants = {
+    'mf48': ('Mf 234 / 238', 'float'), 'mf36': ('Mf 233 / 236', 'float'), 'mf56': ('Mf 235 / 236', 'float'),
+    'mf68': ('Mf 236 / 238', 'float'), 'mf92': ('Mf 229 / 232', 'float'), 'mf38': ('Mf 233 / 238', 'float'),
+    'mf35': ('Mf 233 / 235', 'float'), 'mf43': ('Mf 234 / 233', 'float'), 'mf45': ('Mf 234 / 235', 'float'),
+    'mf09': ('Mf 230 / 229', 'float'), 'mf29': ('Mf 232 / 239', 'float'), 'mf34': ('Mf 233 / 234', 'float'),
+    'mf58': ('Mf 235 / 238', 'float'), 'mf02': ('Mf 230 / 232', 'float'), 'l230': ('\u03BB<sup>230</sup>', 'float'),
+    'l232': ('\u03BB<sup>232</sup>', 'float'), 'l234': ('\u03BB<sup>234</sup>', 'float'), 'l238': ('\u03BB<sup>238</sup>', 'float'),
+    'NA': ('NA', 'float'), 'NR85': ('NR85', 'float'), 'cps': ('Counts per second', 'float'), 'slope': ('Slope correction', 'float'),
+    'R3433': ('R34_33', 'float'), 'R3533': ('R35_33', 'float'),
+    'R3029': ('R30_29', 'float'), 'th229SubU238': ('229Th - k * 238U', 'float'), 'th230SubU238': ('230Th - k * 238U', 'float')
+}
+analysisConstants = {
+    'tri229': ('TRI-13 U229 (ng/g)', 'float'), 'tri233': ('TRI-13 U233 (ng/g)', 'float'), 'tri236': ('TRI-13 U236 (ng/g)', 'float'),
+    'blank232': ('Blank 232 Non-Standard (ng)', 'float'), 'blank232S': ('Blank 232 Standard (ng)', 'float'),
+    'blank234': ('Blank 234 Non-Standard (fg)', 'float'), 'blank234S': ('Blank 234 Standard (fg)', 'float'),
+    'blank238': ('Blank 238 Non-Standard (ng)', 'float'), 'blank238S': ('Blank 238 Standard (ng)', 'float'),
+    'ch_blank230': ('Ch. Bl. 230 Non-Standard (fg)', 'float'), 'ch_blank230S': ('Ch. Bl. 230 Standard (fg)', 'float'),
+    'a230232_init': ('A230Th232Th Init.', 'float'), 'a230232_init_err': ('A230Th232Th Init. Error (abs.)', 'float')
+}
+standardConstants = {
+    'standardBezeich': ('Bezeich.', 'string'), 'standardEinwaage': ('Einwaage (g)', 'float'), 'standardTriSp13': ('TriSp13 (g)', 'float')
+}
+
+def loadConstants(path):
+    constants = {}
+    if os.path.isfile(path):
+        with open(path, 'r') as file:
+            constants = json.loads(file.read().replace('\n', ''))
+
+    allConstants = {**ratiosConstants, **analysisConstants, **standardConstants}
+    for key in allConstants:
+        if key not in constants:
+            if allConstants[key][1] == 'float':
+                constants[key] = 0.0
+            elif allConstants[key][1] == 'string':
+                constants[key] = ''
+
+    fileName = path_leaf(path)
+    if 'coral' in fileName:
+        constants['type'] = 'coral'
+    elif 'stalag' in fileName:
+        constants['type'] = 'stalag'
+    else:
+        constants['type'] = 'stalag'
+    return constants
 
 
 class ConstantsDialog(QDialog):
@@ -11,6 +60,8 @@ class ConstantsDialog(QDialog):
 
         self.inputTab = inputTab
         self.path = path
+        self.edits = {}
+        self.constants = {}
 
         if path is None:
             self.setWindowTitle('Set new constants')
@@ -23,50 +74,6 @@ class ConstantsDialog(QDialog):
         self.setEdits()
 
     def initUI(self):
-        self.mf48Edit = QLineEdit()
-        self.mf36Edit = QLineEdit()
-        self.mf56Edit = QLineEdit()
-        self.mf68Edit = QLineEdit()
-        self.mf92Edit = QLineEdit()
-        self.mf38Edit = QLineEdit()
-        self.mf35Edit = QLineEdit()
-        self.mf43Edit = QLineEdit()
-        self.mf45Edit = QLineEdit()
-        self.mf09Edit = QLineEdit()
-        self.mf29Edit = QLineEdit()
-        self.mf34Edit = QLineEdit()
-        self.mf58Edit = QLineEdit()
-        self.mf02Edit = QLineEdit()
-        self.l230Edit = QLineEdit()
-        self.l232Edit = QLineEdit()
-        self.l234Edit = QLineEdit()
-        self.l238Edit = QLineEdit()
-        self.NAEdit = QLineEdit()
-        self.NR85Edit = QLineEdit()
-        self.cpsEdit = QLineEdit()
-        self.slopeEdit = QLineEdit()
-        self.R3433Edit = QLineEdit()
-        self.R3533Edit = QLineEdit()
-        self.R3029Edit = QLineEdit()
-        self.tri236Edit = QLineEdit()
-        self.tri233Edit = QLineEdit()
-        self.tri229Edit = QLineEdit()
-        self.blank234 = QLineEdit()
-        self.blank234S = QLineEdit()
-        self.blank238 = QLineEdit()
-        self.blank238S = QLineEdit()
-        self.blank232 = QLineEdit()
-        self.blank232S = QLineEdit()
-        self.chBlank230 = QLineEdit()
-        self.chBlank230S = QLineEdit()
-        self.a230232_init = QLineEdit()
-        self.a230232_init_err = QLineEdit()
-        self.standardBezeich = QLineEdit()
-        self.standardEinwaage = QLineEdit()
-        self.standardTriSp13 = QLineEdit()
-        self.saveButton = QPushButton('Save')
-        self.saveButton.clicked.connect(self.save)
-
         font = QtGui.QFont()
         font.setBold(True)
 
@@ -74,55 +81,30 @@ class ConstantsDialog(QDialog):
         ratiosLabel = QLabel('For Ratios:')
         ratiosLabel.setFont(font)
         ratiosLayout.addRow(ratiosLabel)
-        ratiosLayout.addRow(QLabel('Mf 234 / 238'), self.mf48Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 236'), self.mf36Edit)
-        ratiosLayout.addRow(QLabel('Mf 235 / 236'), self.mf56Edit)
-        ratiosLayout.addRow(QLabel('Mf 236 / 238'), self.mf68Edit)
-        ratiosLayout.addRow(QLabel('Mf 229 / 232'), self.mf92Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 238'), self.mf38Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 235'), self.mf35Edit)
-        ratiosLayout.addRow(QLabel('Mf 234 / 233'), self.mf43Edit)
-        ratiosLayout.addRow(QLabel('Mf 234 / 235'), self.mf45Edit)
-        ratiosLayout.addRow(QLabel('Mf 230 / 229'), self.mf09Edit)
-        ratiosLayout.addRow(QLabel('Mf 232 / 239'), self.mf29Edit)
-        ratiosLayout.addRow(QLabel('Mf 233 / 234'), self.mf34Edit)
-        ratiosLayout.addRow(QLabel('Mf 235 / 238'), self.mf58Edit)
-        ratiosLayout.addRow(QLabel('Mf 230 / 232'), self.mf02Edit)
-        ratiosLayout.addRow(QLabel('\u03BB<sup>230</sup>'), self.l230Edit)
-        ratiosLayout.addRow(QLabel('\u03BB<sup>232</sup>'), self.l232Edit)
-        ratiosLayout.addRow(QLabel('\u03BB<sup>234</sup>'), self.l234Edit)
-        ratiosLayout.addRow(QLabel('\u03BB<sup>238</sup>'), self.l238Edit)
-        ratiosLayout.addRow(QLabel('NA'), self.NAEdit)
-        ratiosLayout.addRow(QLabel('NR85'), self.NR85Edit)
-        ratiosLayout.addRow(QLabel('Counts per second'), self.cpsEdit)
-        ratiosLayout.addRow(QLabel('Slope correction'), self.slopeEdit)
-        ratiosLayout.addRow(QLabel('R34_33'), self.R3433Edit)
-        ratiosLayout.addRow(QLabel('R35_33'), self.R3533Edit)
-        ratiosLayout.addRow(QLabel('R30_29'), self.R3029Edit)
+
+        for constant in ratiosConstants:
+            self.edits[constant] = QLineEdit()
+            ratiosLayout.addRow(QLabel(ratiosConstants[constant][0]), self.edits[constant])
 
         analysisLayout = QFormLayout()
         analysisLabel = QLabel('For Analysis:')
         analysisLabel.setFont(font)
         analysisLayout.addRow(analysisLabel)
-        analysisLayout.addRow(QLabel('TRI-13 U236 (ng/g)'), self.tri236Edit)
-        analysisLayout.addRow(QLabel('TRI-13 U233 (ng/g)'), self.tri233Edit)
-        analysisLayout.addRow(QLabel('TRI-13 U229 (ng/g)'), self.tri229Edit)
-        analysisLayout.addRow(QLabel('Blank 234 Non-Standard (fg)'), self.blank234)
-        analysisLayout.addRow(QLabel('Blank 234 Standard (fg)'), self.blank234S)
-        analysisLayout.addRow(QLabel('Blank 238 Non-Standard (ng)'), self.blank238)
-        analysisLayout.addRow(QLabel('Blank 238 Standard (ng)'), self.blank238S)
-        analysisLayout.addRow(QLabel('Blank 232 Non-Standard (ng)'), self.blank232)
-        analysisLayout.addRow(QLabel('Blank 232 Standard (ng)'), self.blank232S)
-        analysisLayout.addRow(QLabel('Ch. Bl. 230 Non-Standard (fg)'), self.chBlank230)
-        analysisLayout.addRow(QLabel('Ch. Bl. 230 Standard (fg)'), self.chBlank230S)
-        analysisLayout.addRow(QLabel('A230Th232Th Init.'), self.a230232_init)
-        analysisLayout.addRow(QLabel('A230Th232Th Init. Error (abs.)'), self.a230232_init_err)
+
+        for constant in analysisConstants:
+            self.edits[constant] = QLineEdit()
+            analysisLayout.addRow(QLabel(analysisConstants[constant][0]), self.edits[constant])
+
         standardLabel = QLabel('Standard')
         standardLabel.setFont(font)
         analysisLayout.addRow(standardLabel)
-        analysisLayout.addRow(QLabel('Bezeich.'), self.standardBezeich)
-        analysisLayout.addRow(QLabel('Einwaage (g)'), self.standardEinwaage)
-        analysisLayout.addRow(QLabel('TriSp13 (g)'), self.standardTriSp13)
+
+        for constant in standardConstants:
+            self.edits[constant] = QLineEdit()
+            analysisLayout.addRow(QLabel(standardConstants[constant][0]), self.edits[constant])
+
+        self.saveButton = QPushButton('Save')
+        self.saveButton.clicked.connect(self.save)
 
         layout = QFormLayout()
         ratiosWidget = QWidget()
@@ -134,97 +116,19 @@ class ConstantsDialog(QDialog):
 
         self.setLayout(layout)
 
-    def setEdits(self):
-        if self.path is None:
-            self.mf48Edit.setText('0.0')
-            self.mf36Edit.setText('0.0')
-            self.mf56Edit.setText('0.0')
-            self.mf68Edit.setText('0.0')
-            self.mf92Edit.setText('0.0')
-            self.mf38Edit.setText('0.0')
-            self.mf35Edit.setText('0.0')
-            self.mf43Edit.setText('0.0')
-            self.mf45Edit.setText('0.0')
-            self.mf09Edit.setText('0.0')
-            self.mf29Edit.setText('0.0')
-            self.mf34Edit.setText('0.0')
-            self.mf58Edit.setText('0.0')
-            self.mf02Edit.setText('0.0')
-            self.l230Edit.setText('0.0')
-            self.l232Edit.setText('0.0')
-            self.l234Edit.setText('0.0')
-            self.l238Edit.setText('0.0')
-            self.NAEdit.setText('0.0')
-            self.NR85Edit.setText('0.0')
-            self.cpsEdit.setText('0.0')
-            self.slopeEdit.setText('0.0')
-            self.R3433Edit.setText('0.0')
-            self.R3533Edit.setText('0.0')
-            self.R3029Edit.setText('0.0')
-
-            # for analysis
-            self.tri236Edit.setText('0.0')
-            self.tri233Edit.setText('0.0')
-            self.tri229Edit.setText('0.0')
-            self.blank234.setText('0.0')
-            self.blank234S.setText('0.0')
-            self.blank238.setText('0.0')
-            self.blank238S.setText('0.0')
-            self.blank232.setText('0.0')
-            self.blank232S.setText('0.0')
-            self.chBlank230.setText('0.0')
-            self.chBlank230S.setText('0.0')
-            self.a230232_init.setText('0.0')
-            self.a230232_init_err.setText('0.0')
-            self.standardEinwaage.setText('0.0')
-            self.standardTriSp13.setText('0.0')
-
+    def setEdit(self, key):
+        if self.constants is not None and key in self.constants:
+            self.edits[key].setText(str(self.constants[key]))
         else:
-            constants = {}
-            with open(self.path, 'r') as file:
-                constants = json.loads(file.read().replace('\n', ''))
+            self.edits[key].setText('0.0')
 
-            self.mf48Edit.setText(str(constants['mf48']))
-            self.mf36Edit.setText(str(constants['mf36']))
-            self.mf56Edit.setText(str(constants['mf56']))
-            self.mf68Edit.setText(str(constants['mf68']))
-            self.mf92Edit.setText(str(constants['mf92']))
-            self.mf38Edit.setText(str(constants['mf38']))
-            self.mf35Edit.setText(str(constants['mf35']))
-            self.mf43Edit.setText(str(constants['mf43']))
-            self.mf45Edit.setText(str(constants['mf45']))
-            self.mf09Edit.setText(str(constants['mf09']))
-            self.mf29Edit.setText(str(constants['mf29']))
-            self.mf34Edit.setText(str(constants['mf34']))
-            self.mf58Edit.setText(str(constants['mf58']))
-            self.mf02Edit.setText(str(constants['mf02']))
-            self.l230Edit.setText(str(constants['l230']))
-            self.l232Edit.setText(str(constants['l232']))
-            self.l234Edit.setText(str(constants['l234']))
-            self.l238Edit.setText(str(constants['l238']))
-            self.NAEdit.setText(str(constants['NA']))
-            self.NR85Edit.setText(str(constants['NR85']))
-            self.cpsEdit.setText(str(constants['cps']))
-            self.slopeEdit.setText(str(constants['slope']))
-            self.R3433Edit.setText(str(constants['R3433']))
-            self.R3533Edit.setText(str(constants['R3533']))
-            self.R3029Edit.setText(str(constants['R3029']))
-            self.tri236Edit.setText(str(constants['tri236']))
-            self.tri233Edit.setText(str(constants['tri233']))
-            self.tri229Edit.setText(str(constants['tri229']))
-            self.blank234.setText(str(constants['blank234']))
-            self.blank234S.setText(str(constants['blank234S']))
-            self.blank238.setText(str(constants['blank238']))
-            self.blank238S.setText(str(constants['blank238S']))
-            self.blank232.setText(str(constants['blank232']))
-            self.blank232S.setText(str(constants['blank232S']))
-            self.chBlank230.setText(str(constants['ch_blank230']))
-            self.chBlank230S.setText(str(constants['ch_blank230S']))
-            self.a230232_init.setText(str(constants['a230232_init']))
-            self.a230232_init_err.setText(str(constants['a230232_init_err']))
-            self.standardBezeich.setText(constants['standardBezeich'])
-            self.standardEinwaage.setText(str(constants['standardEinwaage']))
-            self.standardTriSp13.setText(str(constants['standardTriSp13']))
+    def setEdits(self):
+
+        if self.path is not None:
+            self.constants = loadConstants(self.path)
+
+        for constant in {**ratiosConstants, **analysisConstants, **standardConstants}:
+            self.setEdit(constant)
 
     def save(self):
 
@@ -241,47 +145,12 @@ class ConstantsDialog(QDialog):
             fileName = self.path
 
         fileDict = {}
-        fileDict['mf48'] = float(self.mf48Edit.text())
-        fileDict['mf36'] = float(self.mf36Edit.text())
-        fileDict['mf56'] = float(self.mf56Edit.text())
-        fileDict['mf68'] = float(self.mf68Edit.text())
-        fileDict['mf92'] = float(self.mf92Edit.text())
-        fileDict['mf38'] = float(self.mf38Edit.text())
-        fileDict['mf35'] = float(self.mf35Edit.text())
-        fileDict['mf43'] = float(self.mf43Edit.text())
-        fileDict['mf45'] = float(self.mf45Edit.text())
-        fileDict['mf09'] = float(self.mf09Edit.text())
-        fileDict['mf29'] = float(self.mf29Edit.text())
-        fileDict['mf34'] = float(self.mf34Edit.text())
-        fileDict['mf58'] = float(self.mf58Edit.text())
-        fileDict['mf02'] = float(self.mf02Edit.text())
-        fileDict['l230'] = float(self.l230Edit.text())
-        fileDict['l232'] = float(self.l232Edit.text())
-        fileDict['l234'] = float(self.l234Edit.text())
-        fileDict['l238'] = float(self.l238Edit.text())
-        fileDict['NA'] = float(self.NAEdit.text())
-        fileDict['NR85'] = float(self.NR85Edit.text())
-        fileDict['cps'] = float(self.cpsEdit.text())
-        fileDict['slope'] = float(self.slopeEdit.text())
-        fileDict['R3433'] = float(self.R3433Edit.text())
-        fileDict['R3533'] = float(self.R3533Edit.text())
-        fileDict['R3029'] = float(self.R3029Edit.text())
-        fileDict['tri236'] = float(self.tri236Edit.text())
-        fileDict['tri233'] = float(self.tri233Edit.text())
-        fileDict['tri229'] = float(self.tri229Edit.text())
-        fileDict['blank234'] = float(self.blank234.text())
-        fileDict['blank234S'] = float(self.blank234S.text())
-        fileDict['blank238'] = float(self.blank238.text())
-        fileDict['blank238S'] = float(self.blank238S.text())
-        fileDict['blank232'] = float(self.blank232.text())
-        fileDict['blank232S'] = float(self.blank232S.text())
-        fileDict['ch_blank230'] = float(self.chBlank230.text())
-        fileDict['ch_blank230S'] = float(self.chBlank230S.text())
-        fileDict['a230232_init'] = float(self.a230232_init.text())
-        fileDict['a230232_init_err'] = float(self.a230232_init_err.text())
-        fileDict['standardBezeich'] = self.standardBezeich.text()
-        fileDict['standardEinwaage'] = float(self.standardEinwaage.text())
-        fileDict['standardTriSp13'] = float(self.standardTriSp13.text())
+        allConstants = {**ratiosConstants, **analysisConstants, **standardConstants}
+        for constant in allConstants:
+            if allConstants[constant][1] == 'float':
+                fileDict[constant] = float(self.edits[constant].text())
+            elif allConstants[constant][1] == 'string':
+                fileDict[constant] = self.edits[constant].text()
 
         with open(fileName, 'w') as file:
             json.dump(fileDict, file, indent=4)
