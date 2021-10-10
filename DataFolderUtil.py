@@ -19,8 +19,6 @@ def getFiles(path):
 
     os.chdir(old_path)
 
-    findStandardNumber(path)
-
     return files
 
 
@@ -50,35 +48,30 @@ def willFilesBeDeleted(path):
         return False
 
 
-def findStandardNumber(path):
-    old_path = os.getcwd()
-    os.chdir(path)
+def findStandardNumber(path, type='string'):
+    labNrs = getLabNrsFromList(getFiles(path)['data'], type=type)
 
-    data = re.split(r'\D+', ''.join(glob.glob('.\\*.exp') + glob.glob('data\*.exp')))
-
-    os.chdir(old_path)
-
-    maxN = max(set(data), key=data.count)
-    if maxN == '' or data.count(maxN) == 1:
+    maxN = max(set(labNrs), key=labNrs.count)
+    if maxN == '' or labNrs.count(maxN) == 1:
         return None
     else:
-        return max(set(data), key=data.count)
+        return maxN
 
 
-def getLabNrsFromList(filenameList):
-    labNrs = [re.search('(\d+)(\.exp)', file).group(1) for file in filenameList]
+def getLabNrsFromList(filenameList, type='string'):
+    # gets numbers via the following format: 1. one or more numbers 2. optional non digit characters 3. ends with .exp
+    if type == 'string':
+        labNrs = [re.search('(\d+\D*)(\.exp)', file).group(1) for file in filenameList]
+    elif type == 'int':
+        labNrs = [int(re.search('(\d+)(\D*\.exp)', file).group(1)) for file in filenameList]
 
     return labNrs
 
-
 def getLabNrRange(path):
-    standard = findStandardNumber(path)
-    if standard is not None:
-        standard = int(standard)
+    standard = findStandardNumber(path, type='int')
 
-    labNrs = getLabNrsFromList(getFiles(path)['data'])
+    labNrs = getLabNrsFromList(getFiles(path)['data'], type='int')
 
-    labNrs = [int(nr) for nr in labNrs]
     # remove standard
     if standard is not None:
         labNrs = [nr for nr in labNrs if nr != standard]

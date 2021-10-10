@@ -20,6 +20,7 @@ from Settings import Settings
 
 from ConstantsDialog import loadConstants
 
+import AnalyzerMethods
 
 class Window(QtWidgets.QMainWindow):
 
@@ -129,6 +130,7 @@ class Window(QtWidgets.QMainWindow):
         self.analyzer.set_path(self.ratioBuilder.data_root_folder)
         constants = loadConstants(self.inputTab.get_constants_path())
         self.analyzer.set_constants(constants)
+        self.analyzer.set_specific_constants(self.inputTab.get_specific_constants())
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
         self.analyzer.set_settings(self.settings)
 

@@ -32,6 +32,7 @@ def format(writer, dfs):
                 )) + 1  # adding a little extra space
                 worksheet.set_column(idx, idx, max_len)  # set column width
         else:
+
             df.to_excel(writer, sheet_name=sheetname, index=False)  # send df to writer
             worksheet = writer.sheets[sheetname]  # pull worksheet object
 
@@ -47,11 +48,14 @@ def format(writer, dfs):
                         worksheet.set_row(i+1, None, normal_format)
 
             # Set header formats
-            if sheetname == 'Input' or sheetname == 'Results' or sheetname == 'Calc':
+            if sheetname in ['Input', 'Results', 'Calc', 'Intensities']:
                 worksheet.set_row(0, None, header_format)
                 worksheet.set_row(1, None, bottom_border_format)
+            elif sheetname in ['U-Tailing', 'Th-Tailing']:
+                worksheet.set_row(0, None, bottom_border_format)
 
             for idx, col in enumerate(df.columns):  # loop through all columns
+
                 series = df[col]
                 max_len = max((
                     series.astype(str).str.len().max(),  # len of largest item

@@ -1,4 +1,7 @@
 {
     "default_constants": "A:/Github Repos/BachelorGUI/dist/GUI/constants - stalag.cfg",
-    "style": "windowsvista"
+    "style": "windowsvista",
+    "metadata_history": [
+        "A:\\Github Repos\\BachelorGUI\\data\\CPR_100221_20210210-114741\\W\u00e4geprotokoll  10989-10993.xlsx"
+    ]
 }

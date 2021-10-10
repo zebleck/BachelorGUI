@@ -10,6 +10,7 @@ import Globals
 import os
 
 import ExcelFormatter
+from AnalyzerMethods import thu_alter_kombi, montealter, marincorr_age_error, taylor_err, marincorr_age
 
 
 class Analyzer:
@@ -28,6 +29,8 @@ class Analyzer:
 
     def set_constants(self, constants):
         self.constantsType = constants['type']
+
+        self.constants = constants
 
         # spike impurities
         self.R34_33 = constants['R3433']
@@ -84,6 +87,7 @@ class Analyzer:
         self.standardTriSp13 = constants['standardTriSp13']
 
     def set_specific_constants(self, specific_constants):
+        self.specific_constants = specific_constants
         self.blk = specific_constants['Blank']
         self.yield_Th = specific_constants['Yield_Th']
         self.yield_U = specific_constants['Yield_U']
@@ -164,6 +168,8 @@ class Analyzer:
             'Einwaage (g)': [], 'TriSp13 (g)': []
         }
 
+        missing_labnrs = []
+
         for labnr in measurementLabNrs:
             if labnr == self.standard:
                 metadata_dict['Lab. #'].append(labnr)
@@ -176,12 +182,18 @@ class Analyzer:
 
                 labnr_row = fullMetadata[fullMetadata['Lab. #'].astype(str) == labnr]
 
-                metadata_dict['Lab. #'].append(labnr)
-                metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
-                metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
-                metadata_dict['Tiefe'].append(labnr_row.iloc[0]['Tiefe'])
-                metadata_dict['Einwaage (g)'].append(labnr_row.iloc[0]['Einwaage (g)'])
-                metadata_dict['TriSp13 (g)'].append(labnr_row.iloc[0]['TriSp13 (g)'])
+                if labnr_row.empty:
+                    missing_labnrs.append(labnr)
+                else:
+                    metadata_dict['Lab. #'].append(labnr)
+                    metadata_dict['Bezeich.'].append(labnr_row.iloc[0]['Bezeich.'])
+                    metadata_dict['Art der Probe'].append(labnr_row.iloc[0]['Art der Probe'])
+                    metadata_dict['Tiefe'].append(labnr_row.iloc[0]['Tiefe'])
+                    metadata_dict['Einwaage (g)'].append(labnr_row.iloc[0]['Einwaage (g)'])
+                    metadata_dict['TriSp13 (g)'].append(labnr_row.iloc[0]['TriSp13 (g)'])
+
+        if missing_labnrs:
+            raise ValueError('The metadata is missing the following Lab.Nrs.: {}'.format(', '.join(missing_labnrs)))
 
         # Convert laboratory numbers to int if possible
         metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
@@ -282,10 +294,10 @@ class Analyzer:
         # Ages
 
         # uncorrected Ages
-        age_uncorr = [self.thu_alter_kombi(a230238_corr[i], a234238_corr[i]) for i in range(len(a230238_corr))]
+        age_uncorr = [thu_alter_kombi(a230238_corr[i], a234238_corr[i], self.lambda230, self.lambda234) for i in range(len(a230238_corr))]
 
         # corrected Ages
-        age_corr = [self.marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init) for i in
+        age_corr = [marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init, self.lambda230, self.lambda234) for i in
                     range(len(a230238_corr))]
 
         # Age errors
@@ -304,10 +316,12 @@ class Analyzer:
                     age_uncorr_rel_errors.append('/')
                     age_uncorr_fractions.append('/')
                 else:
-                    error, out_of_range_fraction = self.montealter(a230238_corr[i],
-                                                                   a230238_corr_err[i],
-                                                                   a234238_corr[i],
-                                                                   a234238_corr_err[i])
+                    error, out_of_range_fraction = montealter(a230238_corr[i],
+                                                              a230238_corr_err[i],
+                                                              a234238_corr[i],
+                                                              a234238_corr_err[i],
+                                                              self.lambda230,
+                                                              self.lambda234)
                     age_uncorr_errors.append(error)
                     age_uncorr_rel_errors.append(error / age_uncorr[i] * 100)
                     age_uncorr_fractions.append(100 - out_of_range_fraction * 100)
@@ -317,14 +331,16 @@ class Analyzer:
                     age_corr_rel_errors.append('/')
                     age_corr_fractions.append('/')
                 else:
-                    error, out_of_range_fraction = self.marincorr_age_error(a230238_corr[i],
-                                                                            a230238_corr_err[i],
-                                                                            a234238_corr[i],
-                                                                            a234238_corr_err[i],
-                                                                            a232238[i],
-                                                                            a232238_err[i],
-                                                                            self.a230232_init,
-                                                                            self.a230232_init_err)
+                    error, out_of_range_fraction = marincorr_age_error(a230238_corr[i],
+                                                                       a230238_corr_err[i],
+                                                                       a234238_corr[i],
+                                                                       a234238_corr_err[i],
+                                                                       a232238[i],
+                                                                       a232238_err[i],
+                                                                       self.a230232_init,
+                                                                       self.a230232_init_err,
+                                                                       self.lambda230,
+                                                                       self.lambda234)
                     age_corr_errors.append(error)
                     age_corr_rel_errors.append(error / age_corr[i] * 100)
                     age_corr_fractions.append(100 - out_of_range_fraction * 100)
@@ -339,14 +355,16 @@ class Analyzer:
         d234U = (np.array(a234238_corr) - 1) * 1000
         d234U_err = np.array(a234238_corr_err) * 1000
 
-        age_corr_taylor = [self.taylor_err(self.a230232_init,
-                                           age_corr[i],
-                                           d234U[i],
-                                           a232238[i],
-                                           a232238_err[i],
-                                           self.a230232_init_err,
-                                           a234238_corr_err[i],
-                                           a230238_corr_err[i]) for i in range(len(age_corr))]
+        age_corr_taylor = [taylor_err(self.a230232_init,
+                                      age_corr[i],
+                                      d234U[i],
+                                      a232238[i],
+                                      a232238_err[i],
+                                      self.a230232_init_err,
+                                      a234238_corr_err[i],
+                                      a230238_corr_err[i],
+                                      self.lambda230,
+                                      self.lambda234) for i in range(len(age_corr))]
 
         d234U_init = []
         d234U_init_err = []
@@ -467,46 +485,7 @@ class Analyzer:
         self.results = pd.concat([self.results.iloc[:0], results_units, self.results[0:]])
 
         # Prepare dataframe for constants sheet
-        dfConstants = pd.DataFrame({
-            'R34_33': self.R34_33,
-            'R35_33': self.R35_33,
-            'R30_29': self.R30_29,
-            'mf48': self.mf48,
-            'mf36': self.mf36,
-            'mf56': self.mf56,
-            'mf68': self.mf68,
-            'mf92': self.mf92,
-            'mf38': self.mf38,
-            'mf35': self.mf35,
-            'mf43': self.mf43,
-            'mf45': self.mf45,
-            'mf09': self.mf09,
-            'mf29': self.mf29,
-            'mf34': self.mf34,
-            'mf58': self.mf58,
-            'mf02': self.mf02,
-            'NA': self.NA,
-            'NR85': self.NR85,
-            'cps': self.cps,
-            'slope229Correction': self.slope229Correction,
-            'lambda232': self.lambda232,
-            'lambda234': self.lambda234,
-            'lambda238': self.lambda238,
-            'lambda230': self.lambda230,
-            'trisp236': self.tri236,
-            'trisp233': self.tri233,
-            'trisp229': self.tri229,
-            'blank234': self.blank234,
-            'blank234S': self.blank234S,
-            'blank238': self.blank238,
-            'blank238S': self.blank238S,
-            'blank232': self.blank232,
-            'blank232S': self.blank232S,
-            'chBlank230': self.chBlank230,
-            'chBlank230S': self.chBlank230S,
-            'a230232_init': self.a230232_init,
-            'a230232_init_err': self.a230232_init_err
-        }, index=[''])
+        dfConstants = pd.DataFrame({**self.specific_constants, **self.constants}, index=[''])
         dfConstants = dfConstants.transpose()
         dfConstants.reset_index(level=0, inplace=True)
 
@@ -526,287 +505,3 @@ class Analyzer:
                 writer = ExcelWriter(os.path.join(output_path, '{} {}.xlsx'.format(filename, Util.sortableTimestamp())), engine='xlsxwriter')
                 ExcelFormatter.format(writer, results_dict)
                 writer.save()
-
-    def thu_alter_kombi(self, a230238, a234238):
-
-        xacc = 0.0001
-        x1 = 0
-        x2 = 1000000
-        # i = 0
-
-        fl = ((1 - np.exp(-self.lambda230 * x1)) + (a234238 - 1) * (
-                self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                      1 - np.exp(-(self.lambda230 - self.lambda234) * x1))) - a230238
-        fh = ((1 - np.exp(-self.lambda230 * x2)) + (a234238 - 1) * (
-                self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                      1 - np.exp(-(self.lambda230 - self.lambda234) * x2))) - a230238
-
-        if fl * fh >= 0:
-            return "Out of range"
-        else:
-
-            if fl < 0:
-                xl = x1
-                xh = x2
-            else:
-                xh = x1
-                xl = x2
-                swap = fl
-                fl = fh
-                fh = swap
-
-            t = 0.5 * (x1 + x2)
-            dxold = abs(x2 - x1)
-            dx = dxold
-
-            WERT = ((1 - np.exp(-self.lambda230 * t)) + (a234238 - 1) * (
-                    self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                            1 - np.exp(-(self.lambda230 - self.lambda234) * t))) - a230238
-            ABL = self.lambda230 * np.exp(-self.lambda230 * t) - (a234238 - 1) * (
-                    self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                          -self.lambda230 + self.lambda234) * np.exp((-self.lambda230 + self.lambda234) * t)
-
-            for i in range(100):
-
-                if ((t - xh) * ABL - WERT) * ((t - xl) * ABL - WERT) >= 0:
-                    dxold = dx
-                    dx = 0.5 * (xh - xl)
-                    t = xl + dx
-
-                    if abs(dx) < xacc:
-                        return np.round(t / 1000, 4)
-                elif abs(2 * WERT) > abs(dxold * ABL):
-                    dxold = dx
-                    dx = 0.5 * (xh - xl)
-                    t = xl + dx
-
-                    if abs(dx) < xacc:
-                        return np.round(t / 1000, 4)
-                else:
-                    dxold = dx
-                    dx = WERT / ABL
-                    temp = t
-                    t = t - dx
-
-                    if temp == t:
-                        return np.round(t / 1000, 4)
-
-                if abs(dx) < xacc:
-                    return np.round(t / 1000, 4)
-
-                WERT = ((1 - np.exp(-self.lambda230 * t)) + (a234238 - 1) * (
-                        self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                                1 - np.exp(-(self.lambda230 - self.lambda234) * t))) - a230238
-                ABL = self.lambda230 * np.exp(-self.lambda230 * t) - (a234238 - 1) * (
-                        self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                              -self.lambda230 + self.lambda234) * np.exp((-self.lambda230 + self.lambda234) * t)
-
-                if WERT < 0:
-                    xl = t
-                    fl = WERT
-                else:
-                    xh = t
-                    fh = WERT
-        return "Out of range"
-
-    # AV = a230238_coor
-    # AU = a234238_corr
-
-    def marincorr_age(self, a230238, a234238, a232238, a230232_init):
-
-        xacc = 0.0001
-        x1 = 0
-        x2 = 1000000
-
-        fl = 1 + (a232238 * a230232_init - 1) * np.exp(-self.lambda230 * x1) + (a234238 - 1) * (
-                self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                     1 - np.exp(-(self.lambda230 - self.lambda234) * x1)) - a230238
-        fh = 1 + (a232238 * a230232_init - 1) * np.exp(-self.lambda230 * x2) + (a234238 - 1) * (
-                self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                     1 - np.exp(-(self.lambda230 - self.lambda234) * x2)) - a230238
-
-        if fl * fh >= 0:
-            return "Out of range"
-        else:
-            if fl < 0:
-                xl = x1
-                xh = x2
-            else:
-                xh = x1
-                xl = x2
-
-            t = 0.5 * (x1 + x2)
-            dxold = abs(x2 - x1)
-            dx = dxold
-
-            WERT = 1 + (a232238 * a230232_init - 1) * np.exp(-self.lambda230 * t) + (a234238 - 1) * (
-                    self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                           1 - np.exp(-(self.lambda230 - self.lambda234) * t)) - a230238
-            ABL = -self.lambda230 * (a234238 - 1) * np.exp((-self.lambda230 + self.lambda234) * t) - self.lambda230 * (
-                    a232238 * a230232_init - 1) * np.exp(-self.lambda230 * t)
-
-            for i in range(100):
-
-                if ((t - xh) * ABL - WERT) * ((t - xl) * ABL - WERT) >= 0:
-                    dxold = dx
-                    dx = 0.5 * (xh - xl)
-                    t = xl + dx
-                elif abs(2 * WERT) > abs(dxold * ABL):
-                    dxold = dx
-                    dx = 0.5 * (xh - xl)
-                    t = xl + dx
-                else:
-                    dxold = dx
-                    dx = WERT / ABL
-                    t = t - dx
-
-                if abs(dx) < xacc:
-                    return np.round(t / 1000, 4)
-
-                WERT = 1 + (a232238 * a230232_init - 1) * np.exp(-self.lambda230 * t) + (a234238 - 1) * (
-                        self.lambda230 / (self.lambda230 - self.lambda234)) * (
-                               1 - np.exp(-(self.lambda230 - self.lambda234) * t)) - a230238
-                ABL = -self.lambda230 * (a234238 - 1) * np.exp(
-                    (-self.lambda230 + self.lambda234) * t) - self.lambda230 * (a232238 * a230232_init - 1) * np.exp(
-                    -self.lambda230 * t)
-
-                if WERT < 0:
-                    xl = t
-                else:
-                    xh = t
-
-        return 'Out of range'
-
-    def montealter(self, a230238, a230238_err, a234238, a234238_err):
-        # number of iterations
-        iter = 5000
-
-        felda = np.empty(iter)
-        feldb = np.empty(iter)
-        res = np.empty(iter)
-
-        summe = 0
-        out_of_range_fraction = 0
-        for i in range(iter):
-            felda[i] = self.gauss() * a230238_err + a230238
-            feldb[i] = self.gauss() * a234238_err + a234238
-
-            result = self.thu_alter_kombi(felda[i], feldb[i])
-            if result == 'Out of range':
-                out_of_range_fraction += 1
-                continue
-            res[i] = result
-            summe = summe + res[i]
-
-        out_of_range_fraction /= iter
-
-        mean = summe / iter
-
-        summe = 0
-        for i in range(iter):
-            summe = summe + ((res[i] - mean) * (res[i] - mean))
-
-        fehl = np.sqrt(summe / (iter - 1))
-
-        return np.round(fehl, 4), out_of_range_fraction
-
-    # AV = a230238
-    # AU = a234238
-    # AT232 = a232238
-    # ATinitial = a230232_init
-    def marincorr_age_error(self, a230238, a230238_err, a234238, a234238_err, a232238, a232238_err, a230232_init,
-                            a230232_init_err):
-
-        iter = 5000
-        summe = 0
-
-        felda = np.empty(iter)
-        feldb = np.empty(iter)
-        feldc = np.empty(iter)
-        feldd = np.empty(iter)
-        res = np.empty(iter)
-
-        out_of_range_fraction = 0
-        for i in range(iter):
-            felda[i] = self.gauss() * a230238_err + a230238
-            feldb[i] = self.gauss() * a234238_err + a234238
-            feldc[i] = self.gauss() * a232238_err + a232238
-            feldd[i] = self.gauss() * a230232_init_err + a230232_init
-            result = self.marincorr_age(felda[i], feldb[i], feldc[i], feldd[i])
-
-            if result == 'Out of range':
-                out_of_range_fraction += 1
-                res[i] = 0
-            else:
-                res[i] = result
-                summe = summe + res[i]
-
-        if iter == out_of_range_fraction:
-            return '/', 1.0
-
-        actual_iter = iter - out_of_range_fraction
-        out_of_range_fraction /= iter
-
-        mean = summe / actual_iter
-
-        summe = 0
-
-        for i in range(iter):
-            summe = summe + ((res[i] - mean) * (res[i] - mean))
-
-        fehl = np.sqrt(summe / (actual_iter - 1))
-
-        return np.round(fehl, 4), out_of_range_fraction
-
-    iset = 0
-    var1 = 0
-
-    def gauss(self):
-        if self.iset == 0:
-            while True:
-                v1 = (2 * random()) - 1
-                v2 = (2 * random()) - 1
-                r = (v1 * v1 + v2 * v2)
-                if r < 1:
-                    break
-
-            c = np.sqrt(-2 * np.log(r) / r)
-            self.var1 = v1 * c
-            self.iset = 1
-            return v2 * c
-        else:
-            self.iset = 0
-            return self.var1
-
-    # AU = self.a230232_init
-    # AW = age_corr
-    # AJ = d234U
-    # AS = a232238
-    # AT = a232238_err
-    # AV = self.a230232_init_err
-    # T = a234238_corr_err
-    # AO = a230238_corr_err)
-    def taylor_err(self, au, aw, aj, as_, at, av, t, ao):
-
-        if aw == 'Out of range':
-            return '/'
-        else:
-            return np.sqrt(((au * np.exp(-self.lambda230 * aw * 1000)) / (self.lambda230 * (
-                    np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                -(self.lambda230 - self.lambda234) * aw * 1000)
-                    - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * at ** 2 + (
-                                   (as_ * np.exp(-self.lambda230 * aw * 1000)) / (
-                                   self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) +
-                                                     (aj / 1000) * np.exp(
-                                       -(self.lambda230 - self.lambda234) * aw * 1000) - as_ * au * np.exp(
-                                       -self.lambda230 * aw * 1000)))) ** 2 * av ** 2 + (
-                                   (self.lambda230 / (self.lambda230 - self.lambda234))
-                                   * (np.exp(-(self.lambda230 - self.lambda234) * aw * 1000) - 1) / (
-                                           self.lambda230 * (
-                                           np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                                       -(self.lambda230 - self.lambda234) * aw * 1000)
-                                           - as_ * au * np.exp(
-                                       -self.lambda230 * aw * 1000)))) ** 2 * t ** 2 + (1 / (
-                    self.lambda230 * (np.exp(-self.lambda230 * aw * 1000) + (aj / 1000) * np.exp(
-                -(self.lambda230 - self.lambda234) * aw * 1000)
-                                      - as_ * au * np.exp(-self.lambda230 * aw * 1000)))) ** 2 * ao ** 2) / 1000
