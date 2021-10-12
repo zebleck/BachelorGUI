@@ -577,18 +577,18 @@ class InputTabWidget(QWidget):
         x_axis_tail_u = self.ratioBuilder.x_axis_tail_u
         aatsu = self.ratioBuilder.aatsu
         f_u238 = self.ratioBuilder.f_u238
-        self.interp_u_tail = f_u238(xnew) / (self.ratioBuilder.yield_U * self.ratioBuilder.cps * self.ratioBuilder.u238tail)
+        self.interp_u_tail = f_u238(xnew)
         self.uTailGraph.plot(xnew, self.interp_u_tail, pen=pg.mkPen(color=(150,150,150), style=Qt.DashLine))
-        self.uTailGraph.plot(x_axis_tail_u, aatsu / (self.ratioBuilder.yield_U * self.ratioBuilder.cps * self.ratioBuilder.u238tail), symbol='o', pen=None)
+        self.uTailGraph.plot(x_axis_tail_u, aatsu, symbol='o', pen=None)
 
         # Plot U-232 Tailing
         xnew = np.linspace(228, 231.8, num=200)
         x_axis_tail_th = self.ratioBuilder.x_axis_tail_th
         aats = self.ratioBuilder.aats
         g_th232 = self.ratioBuilder.g_th232
-        self.interp_th_tail = g_th232(xnew) / (self.ratioBuilder.yield_Th * self.ratioBuilder.cps * self.ratioBuilder.th232tail)
+        self.interp_th_tail = g_th232(xnew)
         self.thTailGraph.plot(xnew, self.interp_th_tail, pen=pg.mkPen(color=(150, 150, 150), style=Qt.DashLine))
-        self.thTailGraph.plot(x_axis_tail_th, aats / (self.ratioBuilder.yield_Th * self.ratioBuilder.cps * self.ratioBuilder.th232tail), symbol='o', pen=None)
+        self.thTailGraph.plot(x_axis_tail_th, aats, symbol='o', pen=None)
 
     def fillTailingTables(self):
         self.uTailTable.setModel(DataFrameModel(self.ratioBuilder.uTailData))

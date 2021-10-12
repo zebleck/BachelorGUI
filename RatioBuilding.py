@@ -101,7 +101,7 @@ class RatioBuilder:
 
         self.intensities_dict[labNr] = pd.DataFrame(
             {
-                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                'Cycle': list(np.arange(1, len(data29) + 1)),
                 '229Th': list(data29),
                 '230Th': list(data30),
                 '232Th': list(data32),
@@ -194,7 +194,7 @@ class RatioBuilder:
 
         self.intensities_dict[labNr] = pd.DataFrame(
             {
-                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                'Cycle': list(np.arange(1, len(data29) + 1)),
                 '229Th': list(data29),
                 '230Th': list(data30),
                 '232Th': list(data32),
@@ -287,7 +287,7 @@ class RatioBuilder:
 
         self.intensities_dict[labNr] = pd.DataFrame(
             {
-                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                'Cycle': list(np.arange(1, len(data29) + 1)),
                 '229Th': list(data29),
                 '230Th': list(data30),
                 '232Th': list(data32),
@@ -379,7 +379,7 @@ class RatioBuilder:
 
         self.intensities_dict[labNr] = pd.DataFrame(
             {
-                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                'Cycle': list(np.arange(1, len(data29) + 1)),
                 '229Th': list(data29),
                 '230Th': list(data30),
                 '232Th': list(data32),
@@ -603,7 +603,7 @@ class RatioBuilder:
         g_th232 = self.g_th232
         tail_mat_th = [g_th232(229), g_th232(230)] / (
                 self.yield_Th * self.cps * self.th232tail)  # tailing Th-232 on SEM/RPQ
-        print(self.th232tail)
+
         if tail_mat_th[0] < 2e-9:  # empirically determined threshold for too low signals
             tail_mat_th[0] = 2e-9
         if tail_mat_th[1] < 6e-8:  # empirically determined threshold for too low signals
@@ -889,39 +889,22 @@ class RatioBuilder:
 
         # Save tailing to file
 
-        # dfExtra = pd.DataFrame(columns=['229Th1', '230Th1', '229Th2', '230Th2'])
-        # for key in self.intensities_dict:
-        #     dfExtra = dfExtra.append(pd.DataFrame([['[CPS/V_U]', '[CPS/V_U]', '[CPS/V_Th]', '[CPS/V_Th]']],
-        #                                       columns=dfExtra.columns))
-        #     th232
-        #     dfExtra = dfExtra.append(pd.DataFrame([np.concatenate((self.tail_mat[:2], self.tail_mat_th[:2]))],
-        #                                           columns=['229Th1', '230Th1', '229Th2', '230Th2'], index=['']))
-
-
         writer = ExcelWriter(self.data_root_folder + '\\Tailing.xlsx', engine='xlsxwriter')
 
-        uTailDataWithUnit = pd.concat([pd.DataFrame([['[V]'] * len(self.uTailData.columns)],
-                                                    columns=self.uTailData.columns, index=['']), self.uTailData])
-        uTailDataWithUnit.reset_index(level=0, inplace=True)
-        uTailDataWithUnit = uTailDataWithUnit.rename(columns={"index": ""})
-        thTailDataWithUnit = pd.concat([pd.DataFrame([['[V]'] * len(self.thTailData.columns)],
-                                                     columns=self.thTailData.columns, index=['']), self.thTailData])
-        thTailDataWithUnit.reset_index(level=0, inplace=True)
-        thTailDataWithUnit = thTailDataWithUnit.rename(columns={"index": ""})
+        # Get Tailing in CPS / V_Uran or CPS / V_Thorium
+        dfUTail = self.uTailData.loc[['Tailing U SEM'],:] * self.cps * self.yield_U
+        dfThTail = self.thTailData.loc[['Tailing Th SEM'],:] * self.cps * self.yield_Th
 
-        extra = pd.DataFrame([np.concatenate((self.tail_mat[:2], self.tail_mat_th[:2]))],
-                             columns=['229Th1', '230Th1', '229Th2', '230Th2'], index=['1'])
-        extra = pd.concat([pd.DataFrame([['[CPS/V_U]', '[CPS/V_U]', '[CPS/V_Th]', '[CPS/V_Th]']],
-                                        columns=extra.columns), extra])
+        dfUTail = pd.concat([pd.DataFrame([['[CPS/V_U]'] * len(dfUTail.columns)], columns=dfUTail.columns), dfUTail])
+        dfThTail = pd.concat([pd.DataFrame([['[CPS/V_Th]'] * len(dfThTail.columns)], columns=dfThTail.columns), dfThTail])
 
-        ExcelFormatter.format(writer, {'U-Tailing': uTailDataWithUnit,
-                                       'Th-Tailing': thTailDataWithUnit,
-                                       'Extra': extra})
+        ExcelFormatter.format(writer, {'U-Tailing': dfUTail,
+                                       'Th-Tailing': dfThTail})
         writer.save()
 
         # Save intensitites to file
         units = {
-            'Messpunkt': '',
+            'Cycle': '',
             '229Th': '[V]' if len(c3) not in [2, 3] else '[CPS]',
             '230Th': '[V]' if len(c3) not in [1, 2, 3] else '[CPS]',
             '232Th': '[V]',
@@ -932,8 +915,27 @@ class RatioBuilder:
             '238U': '[V]'
         }
 
-        for key in self.intensities_dict:
-            self.intensities_dict[key] = pd.concat([pd.DataFrame(units, index=['']), self.intensities_dict[key]])
+        for labNr in self.intensities_dict:
+            df = self.intensities_dict[labNr]
+
+            medians = ['Median']
+            errs = ['Error (%)']
+            for col in df.columns[1:]:
+                _, _, mean, err = self.outliertest(df.loc[:, col])
+                medians.append(mean)
+                errs.append(err * 100)
+
+            # add units
+            df = pd.concat([df, pd.DataFrame([[''] * len(df.columns)], columns=df.columns)])
+
+            # add empty row
+            df = pd.concat([pd.DataFrame(units, index=['']), df])
+
+            # add median and errors
+            df = pd.concat([df, pd.DataFrame([medians, errs], columns=df.columns)])
+
+            self.intensities_dict[labNr] = df
+
         writer = ExcelWriter(self.data_root_folder + '\\Intensities.xlsx', engine='xlsxwriter')
         ExcelFormatter.format(writer, self.intensities_dict)
         writer.save()
