@@ -48,10 +48,10 @@ def format(writer, dfs):
                         worksheet.set_row(i+1, None, normal_format)
 
             # Set header formats
-            if sheetname in ['Input', 'Results', 'Calc', 'Intensities']:
+            if sheetname in ['Input', 'Results', 'Calc', 'U-Tailing', 'Th-Tailing', 'Extra'] or re.match(r"\d+\D*", sheetname):
                 worksheet.set_row(0, None, header_format)
                 worksheet.set_row(1, None, bottom_border_format)
-            elif sheetname in ['U-Tailing', 'Th-Tailing']:
+            elif sheetname in ['Ratios']:
                 worksheet.set_row(0, None, bottom_border_format)
 
             for idx, col in enumerate(df.columns):  # loop through all columns
@@ -76,6 +76,8 @@ def format(writer, dfs):
                     worksheet.write(0, idx, '232Th')
                 if re.match(r"230Th[0-9]", str(col)):
                     worksheet.write(0, idx, '230Th')
+                if re.match(r"229Th[0-9]", str(col)):
+                    worksheet.write(0, idx, '229Th')
 
                 for row, value in enumerate(df[col]):
                     if 'o/oo' in str(value):

@@ -72,312 +72,372 @@ class RatioBuilder:
         self.mean_option = mean_option
         self.dev_option = dev_option
 
-    def post_904IC(self, data, i, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
+    def post_904IC(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
                    R35_33,
                    tail_mat_th, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
                    mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
-        self.data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
+        data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
 
-        self.data34 = data[:, 1] - UH_plus * self.data33 * cps * yield_U - self.data33 * R34_33 * cps * yield_U - data[:, 4] * \
+        data34 = data[:, 1] - UH_plus * data33 * cps * yield_U - data33 * R34_33 * cps * yield_U - data[:, 4] * \
                  tail_mat[4] * cps * yield_U - blk * datablkm[i, 1]  # U234
 
-        self.data35 = (data[:, 2] - (data[:, 1] * UH_plus) / (cps * yield_U)) - self.data33 * R35_33 - data[:, 4] * tail_mat_cup[
+        data35 = (data[:, 2] - (data[:, 1] * UH_plus) / (cps * yield_U)) - data33 * R35_33 - data[:, 4] * tail_mat_cup[
             5] - blk * datablkm[i, 2]  # U235
 
-        self.data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
+        data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
 
-        self.data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
+        data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
-        self.data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
+        data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
-                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4] # Th229
+                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4]  # Th229
 
-        self.data30 = data[:, 6] - ThH_plus * self.data29 - self.data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
-                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:, 4] # Th230 U
+        data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
+                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:,
+                                                                                                           4]  # Th230 U
 
-        self.data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+        data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+
+        self.intensities_dict[labNr] = pd.DataFrame(
+            {
+                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                '229Th': list(data29),
+                '230Th': list(data30),
+                '232Th': list(data32),
+                '233U': list(data33),
+                '234U': list(data34),
+                '235U': list(data35),
+                '236U': list(data36),
+                '238U': list(data38)
+            }
+        )
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
-        R58d = self.data35 / self.data38  # U235/U238 for mass fractionation correction
+        R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
-        R58u = self.data35 / self.data38  # U235/U238 for monitoring machine drift
+        R58u = data35 / data38  # U235/U238 for monitoring machine drift
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = self.data35 / self.data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = self.data33 / (self.data34 / (cps * yield_U)) * (1 / self.NR85 / R58d) ** mf34  # U233/U234
+        R34 = data33 / (data34 / (cps * yield_U)) * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = self.data35 / self.data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = (self.data34 / (cps * yield_U)) / self.data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
+        R48 = (data34 / (cps * yield_U)) / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
-        R09 = self.data30 / self.data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
+        R09 = data30 / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = self.data32 / (self.data29 / (cps * yield_Th)) * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / (data29 / (cps * yield_Th)) * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = (self.data34 / (cps * yield_U)) / self.data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
+        R43 = (data34 / (cps * yield_U)) / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = (self.data29 / (cps * yield_Th)) / self.data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
+        R92 = (data29 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
-        R36 = self.data33 / self.data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = (self.data34 / (cps * yield_U)) / self.data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
+        R45 = (data34 / (cps * yield_U)) / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = (self.data30 / (cps * yield_Th)) / self.data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
+        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = self.data33 / self.data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = self.data36 / self.data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = self.data33 / self.data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
-    def post_90IC(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
+    def post_90IC(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
+                  tail_mat,
                   R35_33,
                   tail_mat_th, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
                   mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
-        self.data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
+        data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
 
-        self.data34 = gain13 * data[:, 1] - UH_plus * self.data33 - self.data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
+        data34 = gain13 * data[:, 1] - UH_plus * data33 - data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
                  datablkm[i, 1] / (cps * yield_U)  # U234
 
-        self.data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - self.data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
+        data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
                  datablkm[i, 2]  # U235
 
-        self.data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
+        data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
 
-        self.data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
+        data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
-        self.data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
+        data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
-                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4] # Th229
+                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4]  # Th229
 
-        self.data30 = data[:, 6] - ThH_plus * self.data29 - self.data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
-                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:, 4] # Th230
+        data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
+                 tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:,
+                                                                                                           4]  # Th230
 
-        self.data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+        data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+
+        self.intensities_dict[labNr] = pd.DataFrame(
+            {
+                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                '229Th': list(data29),
+                '230Th': list(data30),
+                '232Th': list(data32),
+                '233U': list(data33),
+                '234U': list(data34),
+                '235U': list(data35),
+                '236U': list(data36),
+                '238U': list(data38)
+            }
+        )
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
-        R58d = self.data35 / self.data38  # U235/U238 for mass fractionation correction
+        R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
-        R58u = self.data35 / self.data38  # U235/U238 for monitoring machine drift
+        R58u = data35 / data38  # U235/U238 for monitoring machine drift
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = self.data35 / self.data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = self.data33 / self.data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
+        R34 = data33 / data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = self.data35 / self.data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = self.data34 / self.data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
+        R48 = data34 / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
-        R09 = self.data30 / self.data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
+        R09 = data30 / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = self.data32 / (self.data29 / (cps * yield_Th)) * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / (data29 / (cps * yield_Th)) * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = self.data34 / self.data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
+        R43 = data34 / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = ((self.data29 / cps) * yield_Th / self.data32) * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
+        R92 = ((data29 / cps) * yield_Th / data32) * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92);
 
-        R36 = self.data33 / self.data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = self.data34 / self.data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
+        R45 = data34 / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = (self.data30 / (cps * yield_Th)) / self.data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
+        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = self.data33 / self.data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = self.data36 / self.data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = self.data33 / self.data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
-    def post_0IC(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
+    def post_0IC(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
+                 tail_mat,
                  R35_33,
                  tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38,
                  mf35,
                  mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
-        self.data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
+        data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
 
-        self.data34 = gain13 * data[:, 1] - UH_plus * self.data33 - self.data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
+        data34 = gain13 * data[:, 1] - UH_plus * data33 - data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
                  datablkm[i, 1]  # U234
 
-        self.data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - self.data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
+        data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
                  datablkm[i, 2]  # U235
 
-        self.data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
+        data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
 
-        self.data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
+        data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
-        self.data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
+        data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
             i, 7] - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps  # Th229
 
-        self.data30 = data[:, 6] - ThH_plus * self.data29 * cps * yield_Th - self.data29 * R30_29 * cps * yield_Th - data[:, 4] * \
+        data30 = data[:, 6] - ThH_plus * data29 * cps * yield_Th - data29 * R30_29 * cps * yield_Th - data[:, 4] * \
                  tail_mat[1] * cps * yield_U - tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[
-                     i, 5] - data[:, 4] * self.th230SubU238 # Th230
+                     i, 5] - data[:, 4] * self.th230SubU238  # Th230
 
-        self.data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[6, i]  # Th232
+        data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[6, i]  # Th232
+
+        self.intensities_dict[labNr] = pd.DataFrame(
+            {
+                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                '229Th': list(data29),
+                '230Th': list(data30),
+                '232Th': list(data32),
+                '233U': list(data33),
+                '234U': list(data34),
+                '235U': list(data35),
+                '236U': list(data36),
+                '238U': list(data38)
+            }
+        )
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
-        R58d = self.data35 / self.data38  # U235/U238 for mass fractionation correction
+        R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
-        R58u = self.data35 / self.data38  # U235/U238 for monitoring machine drift
+        R58u = data35 / data38  # U235/U238 for monitoring machine drift
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = self.data35 / self.data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = self.data33 / self.data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
+        R34 = data33 / data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = self.data35 / self.data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = self.data34 / self.data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
+        R48 = data34 / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R58u)
 
-        R09 = (self.data30 / (cps * yield_Th)) / self.data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
+        R09 = (data30 / (cps * yield_Th)) / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR09, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = self.data32 / self.data29 * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / data29 * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR29, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = self.data34 / self.data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
+        R43 = data34 / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = self.data29 / self.data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
+        R92 = data29 / data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
-        R36 = self.data33 / self.data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = self.data34 / self.data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
+        R45 = data34 / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = (self.data30 / (cps * yield_Th)) / self.data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
+        R02 = (data30 / (cps * yield_Th)) / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = self.data33 / self.data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = self.data36 / self.data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = self.data33 / self.data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
 
-    def post_allcup(self, data, i, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
+    def post_allcup(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
                     tail_mat, R35_33,
                     tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92,
                     mf38, mf35,
                     mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
-        self.data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
+        data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
 
-        self.data34 = gain13 * data[:, 1] - UH_plus * self.data33 - self.data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
+        data34 = gain13 * data[:, 1] - UH_plus * data33 - data33 * R34_33 - data[:, 4] * tail_mat_cup[4] - blk * \
                  datablkm[i, 1] / cps  # U234
 
-
-        self.data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - self.data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
+        data35 = (data[:, 2] - data[:, 1] * UH_plus * gain13) - data33 * R35_33 - data[:, 4] * tail_mat_cup[5] - blk * \
                  datablkm[i, 2]  # U235
 
-        self.data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
+        data36 = data[:, 3] - UH_plus * data[:, 2] - data[:, 4] * tail_mat_cup[6] - blk * datablkm[i, 3]  # U236
 
-        self.data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
+        data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
-        self.data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
-            i, 7] / cps - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps # Th229
+        data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
+            i, 7] / cps - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps  # Th229
 
-        self.data30 = gain13 * data[:, 6] - ThH_plus * self.data29 - self.data29 * R30_29 - data[:, 4] * tail_mat_cup[1] - \
-                 tail_mat_th_cup[1] * data[:, 7] - blk * datablkm[i, 5] / cps - data[:, 4] * self.th230SubU238 / cps # Th230
+        data30 = gain13 * data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat_cup[1] - \
+                 tail_mat_th_cup[1] * data[:, 7] - blk * datablkm[i, 5] / cps - data[:,
+                                                                                4] * self.th230SubU238 / cps  # Th230
 
-        self.data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+        data32 = data[:, 7] - data[:, 4] * tail_mat_cup[2] - blk * datablkm[i, 6]  # Th232
+
+        self.intensities_dict[labNr] = pd.DataFrame(
+            {
+                'Messpunkt': list(np.arange(1, len(data29) + 1)),
+                '229Th': list(data29),
+                '230Th': list(data30),
+                '232Th': list(data32),
+                '233U': list(data33),
+                '234U': list(data34),
+                '235U': list(data35),
+                '236U': list(data36),
+                '238U': list(data38)
+            }
+        )
 
         # calculating atomic ratios, mass fractionation correction, 2 sigma outlier test
-        R58d = self.data35 / self.data38  # U235/U238 for mass fractionation correction
+        R58d = data35 / data38  # U235/U238 for mass fractionation correction
 
-        R58u = self.data35 / self.data38  # U235/U238 for monitoring machine drift
+        R58u = data35 / data38  # U235/U238 for monitoring machine drift
         [R58u, errR58u, R58u_, errRel58u] = self.outliertest(
             R58u)  # output: outlier corrected R58, 2sigma SE, mean, 2sigma relative SE
 
-        R58 = self.data35 / self.data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
+        R58 = data35 / data38 * (1 / self.NR85 / R58d) ** mf58  # U235/U238
         [R58, errR58, R58_, errRel58] = self.outliertest(R58)
 
-        R34 = self.data33 / self.data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
+        R34 = data33 / data34 * (1 / self.NR85 / R58d) ** mf34  # U233/U234
         [R34, errR34, R34_, errRel34] = self.outliertest(R34)
 
-        R56 = self.data35 / self.data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
+        R56 = data35 / data36 * (1 / self.NR85 / R58d) ** mf56  # U235/U236 and mass fractionation
         [R56, errR56, R56_, errRel56] = self.outliertest(R56)
 
-        R48 = self.data34 / self.data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
+        R48 = data34 / data38 * (1 / self.NR85 / R58d) ** mf48  # U234/U238
         [R48, errR48, R48_, errRel48] = self.outliertest(R48)
 
-        R09 = self.data30 / self.data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
+        R09 = data30 / data29 * (1 / self.NR85 / R58d) ** mf09  # Th230/Th229
         [R09, errR30, R09_, errRel09] = self.outliertest(R09)
 
-        R29 = self.data32 / self.data29 * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
+        R29 = data32 / data29 * (1 / self.NR85 / R58d) ** mf29  # Th232/Th229
         [R29, errR32, R29_, errRel29] = self.outliertest(R29)
 
-        R43 = self.data34 / self.data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
+        R43 = data34 / data33 * (1 / self.NR85 / R58d) ** mf43  # U233/U234
         [R43, errR43, R43_, errRel43] = self.outliertest(R43)
 
-        R92 = self.data29 / self.data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
+        R92 = data29 / data32 * (1 / self.NR85 / R58d) ** mf92  # Th232/Th229
         [R92, errR92, R92_, errRel92] = self.outliertest(R92)
 
-        R36 = self.data33 / self.data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
+        R36 = data33 / data36 * (1 / self.NR85 / R58d) ** mf36  # U233/U234
         [R36, errR36, R36_, errRel36] = self.outliertest(R36)
 
-        R45 = self.data34 / self.data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
+        R45 = data34 / data35 * (1 / self.NR85 / R58d) ** mf45  # U233/U234
         [R45, errR45, R45_, errRel45] = self.outliertest(R45)
 
-        R02 = self.data30 / self.data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
+        R02 = data30 / data32 * (1 / self.NR85 / R58d) ** mf02  # Th230/Th229
         [R02, errR02, R02_, errRel02] = self.outliertest(R02)
 
-        R38 = self.data33 / self.data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
+        R38 = data33 / data38 * (1 / self.NR85 / R58d) ** mf38  # U233/U238
         [R38, errR38, R38_, errRel38] = self.outliertest(R38)
 
-        R68 = self.data36 / self.data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
+        R68 = data36 / data38 * (1 / self.NR85 / R58d) ** mf68  # U236/U238
         [R68, errR68, R68_, errRel68] = self.outliertest(R68)
 
-        R35 = self.data33 / self.data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
+        R35 = data33 / data35 * (1 / self.NR85 / R58d) ** mf35  # U233/U235
         [R35, errR35, R35_, errRel35] = self.outliertest(R35)
 
         return R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_, errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_, errRel35
@@ -410,7 +470,8 @@ class RatioBuilder:
             for k in range(len(searchMean)):
                 if searchMean[k] == True:
                     rowtu = k
-            dummyu = raw.loc[rowtu, ['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7']]
+            dummyu = raw.loc[
+                rowtu, ['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7']]
             dummyu = [float(x) for x in dummyu]
             dummyu = np.array(dummyu)
 
@@ -524,13 +585,25 @@ class RatioBuilder:
         self.tail_mat = tail_mat
         self.tail_mat_cup = tail_mat_cup
 
+        self.uTailData = pd.DataFrame(
+            {
+                '229': [self.tail_mat[0], self.tail_mat_cup[0]],
+                '230': [self.tail_mat[1], self.tail_mat_cup[1]],
+                '232': [self.tail_mat[2], self.tail_mat_cup[2]],
+                '233': [self.tail_mat[3], self.tail_mat_cup[3]],
+                '234': [self.tail_mat[4], self.tail_mat_cup[4]],
+                '235': [self.tail_mat[5], self.tail_mat_cup[5]],
+                '236': [self.tail_mat[6], self.tail_mat_cup[6]],
+                '237': [self.tail_mat[7], self.tail_mat_cup[7]],
+            }, index=['Tailing U SEM', 'Tailing U Cup'])
+
     def thorium_tailing(self):
         rpq_factor_th = [52, 10]  # RPQon/RPQoff
 
         g_th232 = self.g_th232
         tail_mat_th = [g_th232(229), g_th232(230)] / (
                 self.yield_Th * self.cps * self.th232tail)  # tailing Th-232 on SEM/RPQ
-
+        print(self.th232tail)
         if tail_mat_th[0] < 2e-9:  # empirically determined threshold for too low signals
             tail_mat_th[0] = 2e-9
         if tail_mat_th[1] < 6e-8:  # empirically determined threshold for too low signals
@@ -541,8 +614,14 @@ class RatioBuilder:
         self.tail_mat_th = tail_mat_th
         self.tail_mat_th_cup = tail_mat_th_cup
 
-        #RPQ_Norm_Th = tail_mat_th * self.cps
-        #IC5_Norm_Th = tail_mat_th_cup * self.cps
+        self.thTailData = pd.DataFrame(
+            {
+                '229': [self.tail_mat_th[0], self.tail_mat_th_cup[0]],
+                '230': [self.tail_mat_th[1], self.tail_mat_th_cup[1]]
+            }, index=['Tailing Th SEM', 'Tailing Th Cup'])
+
+        # RPQ_Norm_Th = tail_mat_th * self.cps
+        # IC5_Norm_Th = tail_mat_th_cup * self.cps
 
     def calc_blank_correction(self):
         old_path = os.getcwd()
@@ -620,7 +699,8 @@ class RatioBuilder:
                 datablkm[k, :] = datablk_mean
 
             blank = pd.DataFrame(
-                {'Lab. #': self.labNrs, 'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2], 'U-236': datablkm[:, 3],
+                {'Lab. #': self.labNrs, 'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2],
+                 'U-236': datablkm[:, 3],
                  'U-238': datablkm[:, 4], 'Th-230': datablkm[:, 5], 'Th-232': datablkm[:, 6], 'Th-229': datablkm[:, 7]},
                 index=names_blank)
             writer = ExcelWriter(self.data_root_folder + '\\PrBlank.xlsx', engine='xlsxwriter')
@@ -630,7 +710,8 @@ class RatioBuilder:
         else:
             datablkm[:, :] = 0
             blank = pd.DataFrame(
-                {'Lab. #': self.labNrs, 'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2], 'U-236': datablkm[:, 3],
+                {'Lab. #': self.labNrs, 'U-233': datablkm[:, 0], 'U-234': datablkm[:, 1], 'U-235': datablkm[:, 2],
+                 'U-236': datablkm[:, 3],
                  'U-238': datablkm[:, 4], 'Th-230': datablkm[:, 5], 'Th-232': datablkm[:, 6], 'Th-229': datablkm[:, 7]},
                 index=names_blank)
             writer = ExcelWriter(self.data_root_folder + '\\PrBlank.xlsx', engine='xlsxwriter')
@@ -650,15 +731,22 @@ class RatioBuilder:
         names_data = np.sort(np.array(list_data))
 
         # get the laboratory numbers from the data filenames
-        self.labNrs = Util.try_convert_to_int(DataFolderUtil.getLabNrsFromList(names_data))
+        self.labNrs = DataFolderUtil.getLabNrsFromList(names_data)
+        standard = DataFolderUtil.findStandardNumber(self.data_root_folder)
+        standardCount = 1
+        # Modify lab nr strings to prevent overwriting in intensities sheet
+        for i, labNr in enumerate(self.labNrs):
+            if labNr == standard:
+                self.labNrs[i] = self.labNrs[i] + '_{}'.format(standardCount)
+                standardCount += 1
 
         self.yhas_uranium()
         self.yhas_thorium()
         self.calc_blank_correction()
 
-        # standard = DataFolderUtil.findStandardNumber(self.data_root_folder)
-
         peakstrhelp = 'Cycle'
+
+        self.intensities_dict = {}
 
         matrix_ratios = np.empty([len(names_data), 18])
         matrix_ratios_add = np.empty([len(names_data), 24])
@@ -701,7 +789,8 @@ class RatioBuilder:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
                  errRel35] = self.post_904IC(
-                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.datablkm, self.UH_plus, self.cps,
+                    data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk, self.datablkm, self.UH_plus,
+                    self.cps,
                     self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
                     self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36,
                     self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
@@ -711,7 +800,8 @@ class RatioBuilder:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
                  errRel35] = self.post_90IC(
-                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus,
+                    data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm,
+                    self.UH_plus,
                     self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
                     self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36,
                     self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
@@ -721,7 +811,8 @@ class RatioBuilder:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
                  errRel35] = self.post_0IC(
-                    data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm, self.UH_plus,
+                    data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm,
+                    self.UH_plus,
                     self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
                     self.tail_mat_th, self.tail_mat_th_cup, self.R30_29, self.yield_Th, self.slope229Correction,
                     self.mf48, self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
@@ -730,7 +821,8 @@ class RatioBuilder:
             else:
                 [R36_, errRel36, R58u_, errRel58u, R56_, errRel56, R43_, errRel43, R45_, errRel45, R48_, errRel48, R09_,
                  errRel09, R92_, errRel92, R02_, errRel02, R38_, errRel38, R68_, errRel68, R35_,
-                 errRel35] = self.post_allcup(data, i, self.tail_mat_cup, self.ThH_plus, self.blk, self.gain,
+                 errRel35] = self.post_allcup(data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk,
+                                              self.gain,
                                               self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33,
                                               self.tail_mat, self.R35_33, self.tail_mat_th, self.tail_mat_th_cup,
                                               self.R30_29, self.yield_Th, self.slope229Correction, self.mf48,
@@ -746,22 +838,25 @@ class RatioBuilder:
                                        R92_, errRel92 * 100, R02_, errRel02 * 100, R38_, errRel38 * 100, R68_,
                                        errRel68 * 100, R35_, errRel35 * 100]
 
+        # reset labNrs
+        self.labNrs = DataFolderUtil.getLabNrsFromList(names_data)
+
         # Save ratios to file
 
         self.ratios = pd.DataFrame({'dU234': (matrix_ratios[:, 10] * self.lambda234 / self.lambda238 - 1) * 1000,
-                                 'Error dU234 (abs.)': (matrix_ratios[:,
-                                                        10] * self.lambda234 / self.lambda238) * matrix_ratios[:,
-                                                                                                 11] / 100,
-                                 'Ratio 233/236': matrix_ratios[:, 0], 'Error (%) 233/236': matrix_ratios[:, 1],
-                                 'Ratio 235/238': matrix_ratios[:, 2], 'Error (%) 235/238': matrix_ratios[:, 3],
-                                 'Ratio 235/236': matrix_ratios[:, 4], 'Error (%) 235/236': matrix_ratios[:, 5],
-                                 'Ratio 234/233': matrix_ratios[:, 6], 'Error (%) 234/233': matrix_ratios[:, 7],
-                                 'Ratio 234/235': matrix_ratios[:, 8], 'Error (%) 234/235': matrix_ratios[:, 9],
-                                 'Ratio 234/238': matrix_ratios[:, 10], 'Error (%) 234/238': matrix_ratios[:, 11],
-                                 'Ratio 230/229': matrix_ratios[:, 12], 'Error (%) 230/229': matrix_ratios[:, 13],
-                                 'Ratio 229/232': matrix_ratios[:, 14], 'Error (%) 229/232': matrix_ratios[:, 15],
-                                 'Ratio 230/232': matrix_ratios[:, 16], 'Error (%) 230/232': matrix_ratios[:, 17]},
-                                index=names_data)
+                                    'Error dU234 (abs.)': (matrix_ratios[:,
+                                                           10] * self.lambda234 / self.lambda238) * matrix_ratios[:,
+                                                                                                    11] / 100,
+                                    'Ratio 233/236': matrix_ratios[:, 0], 'Error (%) 233/236': matrix_ratios[:, 1],
+                                    'Ratio 235/238': matrix_ratios[:, 2], 'Error (%) 235/238': matrix_ratios[:, 3],
+                                    'Ratio 235/236': matrix_ratios[:, 4], 'Error (%) 235/236': matrix_ratios[:, 5],
+                                    'Ratio 234/233': matrix_ratios[:, 6], 'Error (%) 234/233': matrix_ratios[:, 7],
+                                    'Ratio 234/235': matrix_ratios[:, 8], 'Error (%) 234/235': matrix_ratios[:, 9],
+                                    'Ratio 234/238': matrix_ratios[:, 10], 'Error (%) 234/238': matrix_ratios[:, 11],
+                                    'Ratio 230/229': matrix_ratios[:, 12], 'Error (%) 230/229': matrix_ratios[:, 13],
+                                    'Ratio 229/232': matrix_ratios[:, 14], 'Error (%) 229/232': matrix_ratios[:, 15],
+                                    'Ratio 230/232': matrix_ratios[:, 16], 'Error (%) 230/232': matrix_ratios[:, 17]},
+                                   index=names_data)
 
         datacorr = self.ratios.copy()
         datacorr.insert(0, 'Lab. #', self.labNrs)
@@ -774,26 +869,59 @@ class RatioBuilder:
         datacorr_add = pd.DataFrame(
             {
                 'Lab. #': self.labNrs,
-                 'Ratio 233/236': matrix_ratios_add[:, 0], 'Error (%) 233/236': matrix_ratios_add[:, 1],
-                 'Ratio 235/238': matrix_ratios_add[:, 2], 'Error (%) 235/238': matrix_ratios_add[:, 3],
-                 'Ratio 235/236': matrix_ratios_add[:, 4], 'Error (%) 235/236': matrix_ratios_add[:, 5],
-                 'Ratio 234/233': matrix_ratios_add[:, 6], 'Error (%) 234/233': matrix_ratios_add[:, 7],
-                 'Ratio 234/235': matrix_ratios_add[:, 8], 'Error (%) 234/235': matrix_ratios_add[:, 9],
-                 'Ratio 234/238': matrix_ratios_add[:, 10], 'Error (%) 234/238': matrix_ratios_add[:, 11],
-                 'Ratio 230/229': matrix_ratios_add[:, 12], 'Error (%) 230/229': matrix_ratios_add[:, 13],
-                 'Ratio 229/232': matrix_ratios_add[:, 14], 'Error (%) 229/232': matrix_ratios_add[:, 15],
-                 'Ratio 230/232': matrix_ratios_add[:, 16], 'Error (%) 230/232': matrix_ratios_add[:, 17],
-                 'Ratio 233/238': matrix_ratios_add[:, 18], 'Error (%) 233/238': matrix_ratios_add[:, 19],
-                 'Ratio 236/238': matrix_ratios_add[:, 20], 'Error (%) 236/238': matrix_ratios_add[:, 21],
-                 'Ratio 233/235': matrix_ratios_add[:, 22], 'Error (%) 233/235': matrix_ratios_add[:, 23],
+                'Ratio 233/236': matrix_ratios_add[:, 0], 'Error (%) 233/236': matrix_ratios_add[:, 1],
+                'Ratio 235/238': matrix_ratios_add[:, 2], 'Error (%) 235/238': matrix_ratios_add[:, 3],
+                'Ratio 235/236': matrix_ratios_add[:, 4], 'Error (%) 235/236': matrix_ratios_add[:, 5],
+                'Ratio 234/233': matrix_ratios_add[:, 6], 'Error (%) 234/233': matrix_ratios_add[:, 7],
+                'Ratio 234/235': matrix_ratios_add[:, 8], 'Error (%) 234/235': matrix_ratios_add[:, 9],
+                'Ratio 234/238': matrix_ratios_add[:, 10], 'Error (%) 234/238': matrix_ratios_add[:, 11],
+                'Ratio 230/229': matrix_ratios_add[:, 12], 'Error (%) 230/229': matrix_ratios_add[:, 13],
+                'Ratio 229/232': matrix_ratios_add[:, 14], 'Error (%) 229/232': matrix_ratios_add[:, 15],
+                'Ratio 230/232': matrix_ratios_add[:, 16], 'Error (%) 230/232': matrix_ratios_add[:, 17],
+                'Ratio 233/238': matrix_ratios_add[:, 18], 'Error (%) 233/238': matrix_ratios_add[:, 19],
+                'Ratio 236/238': matrix_ratios_add[:, 20], 'Error (%) 236/238': matrix_ratios_add[:, 21],
+                'Ratio 233/235': matrix_ratios_add[:, 22], 'Error (%) 233/235': matrix_ratios_add[:, 23],
             }, index=names_data
         )
         writer = ExcelWriter(self.data_root_folder + '\\Ratios_add.xlsx', engine='xlsxwriter')
         ExcelFormatter.format(writer, {'Ratios': datacorr_add})
         writer.save()
 
+        # Save tailing to file
+
+        # dfExtra = pd.DataFrame(columns=['229Th1', '230Th1', '229Th2', '230Th2'])
+        # for key in self.intensities_dict:
+        #     dfExtra = dfExtra.append(pd.DataFrame([['[CPS/V_U]', '[CPS/V_U]', '[CPS/V_Th]', '[CPS/V_Th]']],
+        #                                       columns=dfExtra.columns))
+        #     th232
+        #     dfExtra = dfExtra.append(pd.DataFrame([np.concatenate((self.tail_mat[:2], self.tail_mat_th[:2]))],
+        #                                           columns=['229Th1', '230Th1', '229Th2', '230Th2'], index=['']))
+
+
+        writer = ExcelWriter(self.data_root_folder + '\\Tailing.xlsx', engine='xlsxwriter')
+
+        uTailDataWithUnit = pd.concat([pd.DataFrame([['[V]'] * len(self.uTailData.columns)],
+                                                    columns=self.uTailData.columns, index=['']), self.uTailData])
+        uTailDataWithUnit.reset_index(level=0, inplace=True)
+        uTailDataWithUnit = uTailDataWithUnit.rename(columns={"index": ""})
+        thTailDataWithUnit = pd.concat([pd.DataFrame([['[V]'] * len(self.thTailData.columns)],
+                                                     columns=self.thTailData.columns, index=['']), self.thTailData])
+        thTailDataWithUnit.reset_index(level=0, inplace=True)
+        thTailDataWithUnit = thTailDataWithUnit.rename(columns={"index": ""})
+
+        extra = pd.DataFrame([np.concatenate((self.tail_mat[:2], self.tail_mat_th[:2]))],
+                             columns=['229Th1', '230Th1', '229Th2', '230Th2'], index=['1'])
+        extra = pd.concat([pd.DataFrame([['[CPS/V_U]', '[CPS/V_U]', '[CPS/V_Th]', '[CPS/V_Th]']],
+                                        columns=extra.columns), extra])
+
+        ExcelFormatter.format(writer, {'U-Tailing': uTailDataWithUnit,
+                                       'Th-Tailing': thTailDataWithUnit,
+                                       'Extra': extra})
+        writer.save()
+
         # Save intensitites to file
         units = {
+            'Messpunkt': '',
             '229Th': '[V]' if len(c3) not in [2, 3] else '[CPS]',
             '230Th': '[V]' if len(c3) not in [1, 2, 3] else '[CPS]',
             '232Th': '[V]',
@@ -804,41 +932,15 @@ class RatioBuilder:
             '238U': '[V]'
         }
 
-        intensities = pd.DataFrame(
-            {
-                'Messpunkt': [''] + list(np.arange(1, len(self.data29)+1)),
-                '229Th': [units['229Th']]+ list(self.data29),
-                '230Th': [units['230Th']] + list(self.data30),
-                '232Th': [units['232Th']] + list(self.data32),
-                '233U': [units['233U']] + list(self.data33),
-                '234U': [units['234U']] + list(self.data34),
-                '235U': [units['235U']] + list(self.data35),
-                '236U': [units['236U']] + list(self.data36),
-                '238U': [units['238U']] + list(self.data38)
-            }
-        )
+        for key in self.intensities_dict:
+            self.intensities_dict[key] = pd.concat([pd.DataFrame(units, index=['']), self.intensities_dict[key]])
         writer = ExcelWriter(self.data_root_folder + '\\Intensities.xlsx', engine='xlsxwriter')
-        ExcelFormatter.format(writer, {'Intensities': intensities})
-        writer.save()
-
-        # Save tailing to file
-        uValues = np.arange(228.5, 237.6, 0.5)
-        thValues = np.arange(227.5, 231.6, 0.5)
-        uTailing = pd.DataFrame(dict(zip(uValues, self.f_u238(uValues))), index=[''])
-        thTailing = pd.DataFrame(dict(zip(thValues, self.g_th232(thValues))), index=[''])
-        writer = ExcelWriter(self.data_root_folder + '\\Tailing.xlsx', engine='xlsxwriter')
-        ExcelFormatter.format(writer, {'U-Tailing': uTailing, 'Th-Tailing': thTailing})
+        ExcelFormatter.format(writer, self.intensities_dict)
         writer.save()
 
         os.chdir(old_path)
 
     def outliertest(self, X):
-        # Consider for future (potentially more advanced outlier detection)
-        #stds = []
-        #for i in range(1000):
-        #    stds.append(np.std(np.random.choice(X, 5, replace=False), ddof=1))
-        #std = np.median(stds)
-
         mean = None
         std = None
 

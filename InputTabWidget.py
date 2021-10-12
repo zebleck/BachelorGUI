@@ -577,37 +577,24 @@ class InputTabWidget(QWidget):
         x_axis_tail_u = self.ratioBuilder.x_axis_tail_u
         aatsu = self.ratioBuilder.aatsu
         f_u238 = self.ratioBuilder.f_u238
-        self.interp_u_tail = f_u238(xnew)
+        self.interp_u_tail = f_u238(xnew) / (self.ratioBuilder.yield_U * self.ratioBuilder.cps * self.ratioBuilder.u238tail)
         self.uTailGraph.plot(xnew, self.interp_u_tail, pen=pg.mkPen(color=(150,150,150), style=Qt.DashLine))
-        self.uTailGraph.plot(x_axis_tail_u, aatsu, symbol='o', pen=None)
+        self.uTailGraph.plot(x_axis_tail_u, aatsu / (self.ratioBuilder.yield_U * self.ratioBuilder.cps * self.ratioBuilder.u238tail), symbol='o', pen=None)
 
         # Plot U-232 Tailing
         xnew = np.linspace(228, 231.8, num=200)
         x_axis_tail_th = self.ratioBuilder.x_axis_tail_th
         aats = self.ratioBuilder.aats
         g_th232 = self.ratioBuilder.g_th232
-        self.interp_th_tail = g_th232(xnew)
+        self.interp_th_tail = g_th232(xnew) / (self.ratioBuilder.yield_Th * self.ratioBuilder.cps * self.ratioBuilder.th232tail)
         self.thTailGraph.plot(xnew, self.interp_th_tail, pen=pg.mkPen(color=(150, 150, 150), style=Qt.DashLine))
-        self.thTailGraph.plot(x_axis_tail_th, aats, symbol='o', pen=None)
+        self.thTailGraph.plot(x_axis_tail_th, aats / (self.ratioBuilder.yield_Th * self.ratioBuilder.cps * self.ratioBuilder.th232tail), symbol='o', pen=None)
 
     def fillTailingTables(self):
-        uTailData = pd.DataFrame(
-            {'229': [self.ratioBuilder.tail_mat[0], self.ratioBuilder.tail_mat_cup[0]],
-             '230': [self.ratioBuilder.tail_mat[1], self.ratioBuilder.tail_mat_cup[1]],
-             '232': [self.ratioBuilder.tail_mat[2], self.ratioBuilder.tail_mat_cup[2]],
-             '233': [self.ratioBuilder.tail_mat[3], self.ratioBuilder.tail_mat_cup[3]],
-             '234': [self.ratioBuilder.tail_mat[4], self.ratioBuilder.tail_mat_cup[4]],
-             '235': [self.ratioBuilder.tail_mat[5], self.ratioBuilder.tail_mat_cup[5]],
-             '236': [self.ratioBuilder.tail_mat[6], self.ratioBuilder.tail_mat_cup[6]],
-             '237': [self.ratioBuilder.tail_mat[7], self.ratioBuilder.tail_mat_cup[7]],},
-            index=['Tailing U SEM', 'Tailing U Cup'])
-        self.uTailTable.setModel(DataFrameModel(uTailData))
+        self.uTailTable.setModel(DataFrameModel(self.ratioBuilder.uTailData))
         self.uTailTable.resizeColumnsToContents()
 
-        thTailData = pd.DataFrame({'229': [self.ratioBuilder.tail_mat_th[0], self.ratioBuilder.tail_mat_th_cup[0]],
-                                   '230': [self.ratioBuilder.tail_mat_th[1], self.ratioBuilder.tail_mat_th_cup[1]]},
-                                index=['Tailing Th SEM', 'Tailing Th Cup'])
-        self.thTailTable.setModel(DataFrameModel(thTailData))
+        self.thTailTable.setModel(DataFrameModel(self.ratioBuilder.thTailData))
         self.thTailTable.resizeColumnsToContents()
 
         factorsData = pd.DataFrame({'UhH+': self.ratioBuilder.UH_plus, 'ThH+': self.ratioBuilder.ThH_plus}, index=['Factors'])
