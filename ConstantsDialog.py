@@ -13,7 +13,7 @@ ratiosConstants = {
     'mf09': ('Mf 230 / 229', 'float'), 'mf29': ('Mf 232 / 239', 'float'), 'mf34': ('Mf 233 / 234', 'float'),
     'mf58': ('Mf 235 / 238', 'float'), 'mf02': ('Mf 230 / 232', 'float'), 'l230': ('\u03BB<sup>230</sup>', 'float'),
     'l232': ('\u03BB<sup>232</sup>', 'float'), 'l234': ('\u03BB<sup>234</sup>', 'float'), 'l238': ('\u03BB<sup>238</sup>', 'float'),
-    'NA': ('NA', 'float'), 'NR85': ('NR85', 'float'), 'cps': ('Counts per second', 'float'), 'slope': ('Slope correction', 'float'),
+    'NA': ('NA', 'float'), 'NR85': ('NR85', 'float'), 'cps': ('Counts per second', 'float'),
     'R3433': ('R34_33', 'float'), 'R3533': ('R35_33', 'float'),
     'R3029': ('R30_29', 'float'), 'th229SubU238': ('229Th - k * 238U', 'float'), 'th230SubU238': ('230Th - k * 238U', 'float')
 }

@@ -47,8 +47,6 @@ class RatioBuilder:
         self.NR85 = constants['NR85']
         self.cps = constants['cps']
 
-        self.slope229Correction = constants['slope']
-
         self.lambda234 = constants['l234']
         self.lambda238 = constants['l238']
         self.lambda230 = constants['l230']
@@ -74,7 +72,7 @@ class RatioBuilder:
 
     def post_904IC(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, datablkm, UH_plus, cps, yield_U, R34_33, tail_mat,
                    R35_33,
-                   tail_mat_th, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
+                   tail_mat_th, R30_29, yield_Th, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
                    mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
@@ -91,7 +89,7 @@ class RatioBuilder:
 
         data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
-                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4]  # Th229
+                 datablkm[i, 7] - self.th229SubU238 * data[:, 4]  # Th229
 
         data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
                  tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:,
@@ -167,7 +165,7 @@ class RatioBuilder:
     def post_90IC(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
                   tail_mat,
                   R35_33,
-                  tail_mat_th, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
+                  tail_mat_th, R30_29, yield_Th, mf48, mf36, mf56, mf68, mf92, mf38, mf35,
                   mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
         data33 = data[:, 0] - data[:, 4] * tail_mat_cup[3] - data[:, 7] * ThH_plus - blk * datablkm[i, 0]  # U233
@@ -184,7 +182,7 @@ class RatioBuilder:
 
         data29 = data[:, 8] - data[:, 4] * tail_mat[0] * cps * yield_U - tail_mat_th[0] * cps * yield_Th * data[:,
                                                                                                            7] - blk * \
-                 datablkm[i, 7] - data[:, 4] * slope229Correction - self.th229SubU238 * data[:, 4]  # Th229
+                 datablkm[i, 7] - self.th229SubU238 * data[:, 4]  # Th229
 
         data30 = data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat[1] * cps * yield_U - \
                  tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[i, 5] - self.th230SubU238 * data[:,
@@ -260,7 +258,7 @@ class RatioBuilder:
     def post_0IC(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
                  tail_mat,
                  R35_33,
-                 tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92, mf38,
+                 tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, mf48, mf36, mf56, mf68, mf92, mf38,
                  mf35,
                  mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
@@ -277,7 +275,7 @@ class RatioBuilder:
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
         data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
-            i, 7] - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps  # Th229
+            i, 7] - data[:, 4] * self.th229SubU238 / cps  # Th229
 
         data30 = data[:, 6] - ThH_plus * data29 * cps * yield_Th - data29 * R30_29 * cps * yield_Th - data[:, 4] * \
                  tail_mat[1] * cps * yield_U - tail_mat_th[1] * cps * yield_Th * data[:, 7] - blk * datablkm[
@@ -352,7 +350,7 @@ class RatioBuilder:
 
     def post_allcup(self, data, i, labNr, tail_mat_cup, ThH_plus, blk, gain13, datablkm, UH_plus, cps, yield_U, R34_33,
                     tail_mat, R35_33,
-                    tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, slope229Correction, mf48, mf36, mf56, mf68, mf92,
+                    tail_mat_th, tail_mat_th_cup, R30_29, yield_Th, mf48, mf36, mf56, mf68, mf92,
                     mf38, mf35,
                     mf43, mf45, mf09, mf29, mf34, mf58, mf02):
 
@@ -369,7 +367,7 @@ class RatioBuilder:
         data38 = data[:, 4] - blk * datablkm[i, 4]  # U238
 
         data29 = data[:, 5] - data[:, 4] * tail_mat_cup[0] - tail_mat_th_cup[0] * data[:, 7] - blk * datablkm[
-            i, 7] / cps - data[:, 4] * slope229Correction / cps - data[:, 4] * self.th229SubU238 / cps  # Th229
+            i, 7] / cps - data[:, 4] * self.th229SubU238 / cps  # Th229
 
         data30 = gain13 * data[:, 6] - ThH_plus * data29 - data29 * R30_29 - data[:, 4] * tail_mat_cup[1] - \
                  tail_mat_th_cup[1] * data[:, 7] - blk * datablkm[i, 5] / cps - data[:,
@@ -792,7 +790,7 @@ class RatioBuilder:
                     data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk, self.datablkm, self.UH_plus,
                     self.cps,
                     self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
-                    self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36,
+                    self.tail_mat_th, self.R30_29, self.yield_Th, self.mf48, self.mf36,
                     self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
                     self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
                     self.mf02)  # measurement method: 234, 230, and 229 on SEM/RPQ
@@ -803,7 +801,7 @@ class RatioBuilder:
                     data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm,
                     self.UH_plus,
                     self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
-                    self.tail_mat_th, self.R30_29, self.yield_Th, self.slope229Correction, self.mf48, self.mf36,
+                    self.tail_mat_th, self.R30_29, self.yield_Th, self.mf48, self.mf36,
                     self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
                     self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
                     self.mf02)  # measurement method: 230 and 229 on SEM/RPQ
@@ -814,7 +812,7 @@ class RatioBuilder:
                     data, i, self.labNrs[i], self.tail_mat_cup, self.ThH_plus, self.blk, self.gain, self.datablkm,
                     self.UH_plus,
                     self.cps, self.yield_U, self.R34_33, self.tail_mat, self.R35_33,
-                    self.tail_mat_th, self.tail_mat_th_cup, self.R30_29, self.yield_Th, self.slope229Correction,
+                    self.tail_mat_th, self.tail_mat_th_cup, self.R30_29, self.yield_Th,
                     self.mf48, self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
                     self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
                     self.mf02)  # measurement method: 230 on SEM/RPQ
@@ -825,7 +823,7 @@ class RatioBuilder:
                                               self.gain,
                                               self.datablkm, self.UH_plus, self.cps, self.yield_U, self.R34_33,
                                               self.tail_mat, self.R35_33, self.tail_mat_th, self.tail_mat_th_cup,
-                                              self.R30_29, self.yield_Th, self.slope229Correction, self.mf48,
+                                              self.R30_29, self.yield_Th, self.mf48,
                                               self.mf36, self.mf56, self.mf68, self.mf92, self.mf38, self.mf35,
                                               self.mf43, self.mf45, self.mf09, self.mf29, self.mf34, self.mf58,
                                               self.mf02)  # measurement method: all isotopes on cup

@@ -58,8 +58,6 @@ class Analyzer:
         self.NR85 = constants['NR85']
         self.cps = constants['cps']
 
-        self.slope229Correction = constants['slope']
-
         self.lambda232 = constants['l232']
         self.lambda234 = constants['l234']
         self.lambda238 = constants['l238']
