@@ -18,7 +18,7 @@ ratiosConstants = {
     'R3029': ('R30_29', 'float'), 'th229SubU238': ('229Th - k * 238U', 'float'), 'th230SubU238': ('230Th - k * 238U', 'float')
 }
 analysisConstants = {
-    'tri229': ('TRI-13 U229 (ng/g)', 'float'), 'tri233': ('TRI-13 U233 (ng/g)', 'float'), 'tri236': ('TRI-13 U236 (ng/g)', 'float'),
+    'tri229': ('TRI-13 Th229 (ng/g)', 'float'), 'tri233': ('TRI-13 U233 (ng/g)', 'float'), 'tri236': ('TRI-13 U236 (ng/g)', 'float'),
     'blank232': ('Blank 232 Non-Standard (ng)', 'float'), 'blank232S': ('Blank 232 Standard (ng)', 'float'),
     'blank234': ('Blank 234 Non-Standard (fg)', 'float'), 'blank234S': ('Blank 234 Standard (fg)', 'float'),
     'blank238': ('Blank 238 Non-Standard (ng)', 'float'), 'blank238S': ('Blank 238 Standard (ng)', 'float'),
