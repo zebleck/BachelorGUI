@@ -841,7 +841,7 @@ class RatioBuilder:
 
         # Save ratios to file
 
-        self.ratios = pd.DataFrame({'dU234': (matrix_ratios[:, 10] * self.lambda234 / self.lambda238 - 1) * 1000,
+        self.ratios = pd.DataFrame({'Lab. #': self.labNrs, 'dU234': (matrix_ratios[:, 10] * self.lambda234 / self.lambda238 - 1) * 1000,
                                     'Error dU234 (abs.)': (matrix_ratios[:,
                                                            10] * self.lambda234 / self.lambda238) * matrix_ratios[:,
                                                                                                     11] / 100,
@@ -857,7 +857,6 @@ class RatioBuilder:
                                    index=names_data)
 
         datacorr = self.ratios.copy()
-        datacorr.insert(0, 'Lab. #', self.labNrs)
 
         writer = ExcelWriter(self.data_root_folder + '\\Ratios.xlsx', engine='xlsxwriter')
         ExcelFormatter.format(writer, {'Ratios': datacorr})

@@ -17,15 +17,11 @@ class Analyzer:
     def __init__(self):
         self.data_root_folder = None
         self.calculate_age_errors = True
-        self.write_results_file = True
-        self.settings = None
 
-    def set_settings(self, settings):
-        self.settings = settings
-
-    def set_path(self, path):
+    def set_path(self, path, find_standard=True):
         self.data_root_folder = path
-        self.standard = DataFolderUtil.findStandardNumber(path)
+        if find_standard:
+            self.standard = DataFolderUtil.findStandardNumber(path)
 
     def set_constants(self, constants):
         self.constantsType = constants['type']
@@ -86,11 +82,6 @@ class Analyzer:
 
     def set_specific_constants(self, specific_constants):
         self.specific_constants = specific_constants
-        self.blk = specific_constants['Blank']
-        self.yield_Th = specific_constants['Yield_Th']
-        self.yield_U = specific_constants['Yield_U']
-        self.gain = specific_constants['Gain']
-        self.tailShift = specific_constants['Tail shift']
 
     def set_metadata(self, metadata_path, ratios):
         '''
@@ -102,18 +93,17 @@ class Analyzer:
             self.tiefe_unit = 'cm'
 
         elif metadata_path.endswith('.xlsx'):
-            # pd.read_excel() throws an error when using in .exe
             fullMetadata = pd.read_excel(metadata_path, sheet_name='Ergebnisse', na_filter=False, engine='openpyxl')
 
             metadata_dict = {'Lab. #': [], 'Bezeich.': [], 'Art der Probe': [], 'Mess. Dat.': [], 'Tiefe': [],
                              'Einwaage (g)': [], 'TriSp13 (g)': []}
 
+            if fullMetadata.iloc[:, 4].str.contains('cm').any():
+                self.tiefe_unit = 'cm'
+            elif fullMetadata.iloc[:, 4].str.contains('mm').any():
+                self.tiefe_unit = 'mm'
+
             for idx, row in fullMetadata.iterrows():
-                if idx == 0:
-                    if 'cm' in fullMetadata.iloc[idx, 4]:
-                        self.tiefe_unit = 'cm'
-                    elif 'mm' in fullMetadata.iloc[idx, 4]:
-                        self.tiefe_unit = 'mm'
                 try:
                     labnr = fullMetadata.iloc[idx, 0]
                     metadata_dict['Lab. #'].append(labnr)
@@ -194,7 +184,7 @@ class Analyzer:
             raise ValueError('The metadata is missing the following Lab.Nrs.: {}'.format(', '.join(missing_labnrs)))
 
         # Convert laboratory numbers to int if possible
-        metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
+        # metadata_dict['Lab. #'] = Util.try_convert_to_int(metadata_dict['Lab. #'])
 
         # Create dataframe
         self.metadata = pd.DataFrame(metadata_dict, index=indices)
@@ -212,7 +202,33 @@ class Analyzer:
                                     'Blank 232 (ng)': blank232,
                                     'Ch. Blank 230 (fg)': chBlank230}, index=indices)
 
-    def analyze(self, ratios, filename='Results', options_dict=None, output_path=None):
+    def set_metadata_df(self, metadata):
+        '''
+         set metadata df directly
+        '''
+        self.metadata = metadata
+
+        self.tiefe_unit = self.metadata['Tiefe'].iloc[0]
+        self.metadata = self.metadata[self.metadata['Lab. #'].notna()]
+        self.metadata.index = list(range(len(self.metadata)))
+
+        # duplicate last standard row if last measurement was not standard measurement
+        if self.metadata.iloc[-1]['Lab. #'] != self.standard and self.standard is not None:
+            self.metadata = self.metadata.append(self.metadata.iloc[-2], ignore_index=True)
+
+        # Set blanks
+        blank234 = [self.blank234S if desc == 'Standard' else self.blank234 for desc in self.metadata['Art der Probe']]
+        blank238 = [self.blank238S if desc == 'Standard' else self.blank238 for desc in self.metadata['Art der Probe']]
+        blank232 = [self.blank232S if desc == 'Standard' else self.blank232 for desc in self.metadata['Art der Probe']]
+        chBlank230 = [self.chBlank230S if desc == 'Standard' else self.chBlank230 for desc in
+                      self.metadata['Art der Probe']]
+
+        self.blanks = pd.DataFrame({'Blank 234 (fg)': blank234,
+                                    'Blank 238 (ng)': blank238,
+                                    'Blank 232 (ng)': blank232,
+                                    'Ch. Blank 230 (fg)': chBlank230}, index=self.metadata.index)
+
+    def analyze(self, ratios, filename='Results', write_results_file=True, options_dict=None, output_path=None):
         ratios = ratios.copy()
 
         # Add additional row if last standard was not measured
@@ -247,8 +263,11 @@ class Analyzer:
         a234238_err = a234238 * ratios['Error (%) 234/238'] / 100
         a234238_corr = [a234238[i] * 2 / (a234238[i - 1] + a234238[i + 1])
                         if (
-                    0 < i < len(a234238) - 1 and self.standard is not None and self.standard not in ratios.index[
-                i]) else a234238[i]
+                0 < i < len(a234238) - 1 and
+                self.standard is not None and
+                self.standard not in ratios['Lab. #'].iloc[i]
+        )
+                        else a234238[i]
                         for i
                         in range(len(a234238))]
         a234238_corr_err = a234238_corr * ratios['Error (%) 234/238'] / 100
@@ -272,30 +291,35 @@ class Analyzer:
 
         # a230232
         a230232 = th230dpmg / th232dpmg
-        a230232_err = a230232 * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (th232ngg_err / th232ngg) ** 2)
+        a230232_err = a230232 * (np.array((th230dpmg_err / th230dpmg) ** 2 + (th232ngg_err / th232ngg) ** 2)) ** 0.5
 
         # a230238
         a230238 = th230dpmg / u238dpmg
-        a230238_err = a230238 * np.sqrt((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2)
+        a230238_err = a230238 * ((u238dpmg_err / u238dpmg) ** 2 + (th230pgg_err / th230pgg) ** 2) ** 0.5
         a230238_corr = [a230238[i] * 2 / (a230238[i - 1] + a230238[i + 1])
                         if (
-                    0 < i < len(a230238) - 1 and self.standard is not None and self.standard not in ratios.index[
-                i]) else a230238[i]
+                0 < i < len(a230238) - 1 and
+                self.standard is not None and
+                self.standard not in ratios['Lab. #'].iloc[i]
+        )
+                        else a230238[i]
                         for i
                         in range(len(a230238))]
-        a230238_corr_err = a230238_corr * np.sqrt((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
+        a230238_corr_err = a230238_corr * ((th230dpmg_err / th230dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2) ** 0.5
 
         # a232238
         a232238 = th232dpmg / u238dpmg
-        a232238_err = a232238 * np.sqrt((th232dpmg_err / th232dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2)
+        a232238_err = a232238 * ((th232dpmg_err / th232dpmg) ** 2 + (u238dpmg_err / u238dpmg) ** 2) ** 0.5
 
         # Ages
 
         # uncorrected Ages
-        age_uncorr = [thu_alter_kombi(a230238_corr[i], a234238_corr[i], self.lambda230, self.lambda234) for i in range(len(a230238_corr))]
+        age_uncorr = [thu_alter_kombi(a230238_corr[i], a234238_corr[i], self.lambda230, self.lambda234) for i in
+                      range(len(a230238_corr))]
 
         # corrected Ages
-        age_corr = [marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init, self.lambda230, self.lambda234) for i in
+        age_corr = [marincorr_age(a230238_corr[i], a234238_corr[i], a232238[i], self.a230232_init, self.lambda230,
+                                  self.lambda234) for i in
                     range(len(a230238_corr))]
 
         # Age errors
@@ -375,10 +399,12 @@ class Analyzer:
             if age_corr[i] == 'Out of range' or age_corr_errors[i] == '/':
                 d234U_init_err.append('/')
             else:
-                d234U_init_err.append(np.sqrt(
-                    (np.exp(self.lambda234 * age_corr[i] * 1000) * a234238_corr_err[i]) ** 2 + (
-                            (a234238_corr[i] - 1) * self.lambda234 * np.exp(self.lambda234 * age_corr[i] * 1000) *
-                            age_corr_errors[i] * 1000) ** 2) * 1000)
+                d234U_init_err.append((
+                                              (np.exp(self.lambda234 * age_corr[i] * 1000) * a234238_corr_err[
+                                                  i]) ** 2 + (
+                                                      (a234238_corr[i] - 1) * self.lambda234 * np.exp(
+                                                  self.lambda234 * age_corr[i] * 1000) *
+                                                      age_corr_errors[i] * 1000) ** 2) ** 0.5 * 1000)
 
         cheng_corr = [age_corr[i] * 1000 - 58
                       if age_corr[i] != 'Out of range' else 'Out of range' for i in range(len(age_corr))]
@@ -389,10 +415,10 @@ class Analyzer:
                      range(len(age_corr))]
 
         # Create input sheet dataframe
-        self.input = pd.concat([self.metadata, ratios], axis=1)
-        self.input.drop(['dU234', 'Error dU234 (abs.)'], axis=1, inplace=True)
+        self.input = pd.concat([self.metadata, ratios.drop(columns=['Lab. #'], errors='ignore')], axis=1)
+        self.input.drop(['dU234', 'Error dU234 (abs.)'], axis=1, inplace=True, errors='ignore')
 
-        input_units = ['', '', '', '', '', '', '', '', '', '', 'gem.', '(%)', 'gem.', '(%)', 'gem.+korr.', '(%)',
+        input_units = ['', '', '', '', self.tiefe_unit, '', '', '', '', '', 'gem.', '(%)', 'gem.', '(%)', 'gem.+korr.', '(%)',
                        'gem.', '(%)', 'gem.', '(%)', '', '(%)', '', '(%)', '', '(%)']
         input_units_frame = pd.DataFrame(dict(zip(self.input.columns, input_units)), index=[''])
         self.input = pd.concat([self.input.iloc[:0], input_units_frame, self.input[0:]])
@@ -491,15 +517,21 @@ class Analyzer:
         dfOptions = dfOptions.transpose()
         dfOptions.reset_index(level=0, inplace=True)
 
-        results_dict = {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants, 'Options': dfOptions}
+        results_dict = {'Input': self.input, 'Calc': self.calc, 'Results': self.results, 'Constants': dfConstants,
+                        'Options': dfOptions}
 
-        if self.write_results_file:
-            # Write Results file
-            writer = ExcelWriter(self.data_root_folder + '\\{}.xlsx'.format(filename), engine='xlsxwriter')
+        if write_results_file:
+            self.writeToFile(results_dict, output_path=output_path)
+        else:
+            return results_dict
+
+    def writeToFile(self, results_dict, fileTitle='Results', output_path=None):
+        writer = ExcelWriter(self.data_root_folder + '\\{}.xlsx'.format(fileTitle), engine='xlsxwriter')
+        ExcelFormatter.format(writer, results_dict)
+        writer.save()
+
+        if output_path is not None:
+            writer = ExcelWriter(os.path.join(output_path, '{} {}.xlsx'.format(fileTitle, Util.sortableTimestamp())),
+                                 engine='xlsxwriter')
             ExcelFormatter.format(writer, results_dict)
             writer.save()
-
-            if output_path is not None:
-                writer = ExcelWriter(os.path.join(output_path, '{} {}.xlsx'.format(filename, Util.sortableTimestamp())), engine='xlsxwriter')
-                ExcelFormatter.format(writer, results_dict)
-                writer.save()

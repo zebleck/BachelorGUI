@@ -14,31 +14,26 @@ def load_json(path):
     return _dict
     
     
-def load_ratios(path):
-    folder_data = os.path.join(path, 'data')
-    if os.path.isdir(folder_data):
-        list_data = os.listdir(folder_data)
-        names_data = np.sort(np.array(list_data))
+def get_ratios_and_metadata_from_results(file_path):
+    if os.path.isfile(file_path):
+        results = pd.read_excel(file_path, engine='openpyxl')
 
-        rbook = xlrd.open_workbook(os.path.join(path, 'Ratios.xlsx'))
+        ratios = results.copy()
+        ratios = ratios[['Lab. #', 'Ratio 233/236', 'Error (%) 233/236',
+                       'Ratio 235/238', 'Error (%) 235/238', 'Ratio 235/236',
+                       'Error (%) 235/236', 'Ratio 234/233', 'Error (%) 234/233',
+                       'Ratio 234/235', 'Error (%) 234/235', 'Ratio 234/238',
+                       'Error (%) 234/238', 'Ratio 230/229', 'Error (%) 230/229',
+                       'Ratio 229/232', 'Error (%) 229/232', 'Ratio 230/232',
+                       'Error (%) 230/232']]
 
-        sheet = rbook.sheet_by_name('Ratios')
+        metadata = results.copy()
+        metadata = metadata[['Lab. #', 'Bezeich.', 'Art der Probe', 'Mess. Dat.', 'Tiefe',
+                             'Einwaage (g)', 'TriSp13 (g)']]
 
-        ratios_dict = {}
-
-        for col in range(1, sheet.ncols):
-            key = sheet.cell(0, col).value
-            ratios_dict[key] = []
-            
-            for row in range(1, sheet.nrows):
-                try:
-                    ratios_dict[key].append(float(sheet.cell(row, col).value))
-                except:
-                    ratios_dict[key].append(sheet.cell(row, col).value)
-        
-        ratios = pd.DataFrame(ratios_dict, index=names_data)
-    
-        return ratios
+        return ratios, metadata
+    else:
+        return None, None
 
 
 def get_standard_number_from_df(df):
@@ -50,6 +45,10 @@ def get_standard_number_from_df(df):
         return None
     return max(set(data), key=data.count)
 
+
+def path_head(path):
+    head, tail = ntpath.split(path)
+    return head
 
 def path_leaf(path):
     head, tail = ntpath.split(path)

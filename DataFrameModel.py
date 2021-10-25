@@ -13,7 +13,10 @@ class DataFrameModel(QtCore.QAbstractTableModel):
         if showIndex:
             data.reset_index(inplace=True)
         self._data = data
-        self.standards = str(standards)
+        if isinstance(standards, list) or standards is None:
+            self.standards = standards
+        else:
+            self.standards = [standards]
 
     def rowCount(self, parent=None):
         return self._data.shape[0]
@@ -41,8 +44,10 @@ class DataFrameModel(QtCore.QAbstractTableModel):
                 if self.standards is not None:
                     if self.index[index.row()] == '':
                         return QtGui.QBrush(Qt.white)
-                    elif self.standards in self.index[index.row()]:
-                        return QtGui.QBrush(QtGui.QColor(216, 228, 188))
+                    elif self.standards is not None:
+                        for standard in self.standards:
+                            if standard in self._data['Lab. #'].iloc[index.row()]:
+                                return QtGui.QBrush(QtGui.QColor(216, 228, 188))
                 return QtGui.QBrush(Qt.white)
 
         return None

@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QGridLayout, QGroupBox, QLineEdit, QLabel, QPushButt
     QMessageBox, QHBoxLayout, QFileDialog, QTableView, QHeaderView, QCheckBox, QWidget, QListWidget, QListWidgetItem
 from PyQt5 import QtGui
 import os
+
+import Util
 from DataFrameModel import DataFrameModel
 from MetadataDialog import MetadataDialog
 import Globals
@@ -46,6 +48,10 @@ class AnalysisTabWidget(QWidget):
         self.editButton.clicked.connect(self.editMetadata)
         self.runAnalysisButton = QPushButton('Start Analysis')
         self.runAnalysisButton.clicked.connect(self.runEvent)
+        # Reanalyze multiple Results files button
+        self.multipleAnalysesButton = QPushButton()
+        self.multipleAnalysesButton.setIcon(QtGui.QIcon(":/icons/excel.png"))
+        self.multipleAnalysesButton.clicked.connect(self.runMultipleEvent)
 
         # Metadata history
         metadataHistoryBox = QGroupBox('Metadata History')
@@ -73,6 +79,7 @@ class AnalysisTabWidget(QWidget):
         topLayout.addWidget(self.createButton)
         topLayout.addWidget(self.editButton)
         topLayout.addWidget(self.runAnalysisButton)
+        topLayout.addWidget(self.multipleAnalysesButton)
         topLayoutWidget = QWidget()
         topLayoutWidget.setLayout(topLayout)
 
@@ -161,6 +168,18 @@ class AnalysisTabWidget(QWidget):
         else:
             self.window.startAnalysis(path)
 
+    def runMultipleEvent(self):
+        ratioFiles = QFileDialog.getOpenFileNames(self, 'Select results files to analyze', '', 'Excel-Datei (*.xlsx)')[0]
+        fileNames = [Util.path_leaf(file) for file in ratioFiles]
+
+        if not len(ratioFiles):
+            return
+
+        if QMessageBox.question(self, 'Run', 'Are you sure you want to analyze: {}?'.format(', '.join(fileNames)),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No) == QMessageBox.Yes:
+            self.window.startCombinedResultsAnalysis(ratioFiles)
+
     ''' +-----------------------------+ '''
     ''' |        Results-Code         | '''
     ''' +-----------------------------+ '''
@@ -178,6 +197,9 @@ class AnalysisTabWidget(QWidget):
 
         self.resultsBox.setLayout(layout)
 
-    def display(self):
-        self.resultTable.setModel(DataFrameModel(self.analyzer.results, self.analyzer.standard, showIndex=False))
+    def clearResultsTable(self):
+        self.resultTable.setModel(None)
+
+    def display(self, results, standards):
+        self.resultTable.setModel(DataFrameModel(results, standards, showIndex=False))
         self.resultTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)

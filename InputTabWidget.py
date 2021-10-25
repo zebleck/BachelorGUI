@@ -299,7 +299,6 @@ class InputTabWidget(QWidget):
         if not os.path.isdir(path):
             return
 
-        #path = os.path.normpath(path)
         if path != self.dirNameEdit.text():
             self.clear()
             self.dirNameEdit.setText(path)
@@ -310,7 +309,6 @@ class InputTabWidget(QWidget):
         if not os.path.isdir(path):
             return
 
-        #path = os.path.normpath(path)
         self.outputDirNameEdit.setText(path)
 
     def openOutputDirectory(self):

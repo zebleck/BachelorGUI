@@ -2,6 +2,7 @@ import xlsxwriter
 import pandas as pd
 import Util
 import re
+import numpy as np
 
 
 def format(writer, dfs):
@@ -12,6 +13,7 @@ def format(writer, dfs):
     constants_header_format = writer.book.add_format({'bold': True, 'align': 'right', 'left': 1, 'top': 1, 'bottom': 1, 'right': 1, 'bg_color': '#ddb310', 'font_name': 'Arial', 'font_size': 11})
     constants_content_format = writer.book.add_format({'align': 'left', 'right': 1, 'top': 1, 'bottom': 1, 'bg_color': '#DCDCDC', 'font_name': 'Arial', 'font_size': 11})
     bottom_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'bottom': 6, 'font_name': 'Arial', 'font_size': 11})
+    bottom_top_border_format = writer.book.add_format({'bold': True, 'align': 'center', 'top': 6, 'bottom': 6, 'font_name': 'Arial', 'font_size': 11})
     standard_format = writer.book.add_format({'bg_color': '#d8e4bc', 'align': 'center', 'font_name': 'Arial', 'font_size': 11})
     normal_format = writer.book.add_format({'align': 'center', 'font_name': 'Arial', 'font_size': 11})
     superscript = writer.book.add_format({'bold': True, 'font_script': 1, 'font_name': 'Arial', 'font_size': 11})
@@ -53,6 +55,12 @@ def format(writer, dfs):
                 worksheet.set_row(1, None, bottom_border_format)
             elif sheetname in ['Ratios']:
                 worksheet.set_row(0, None, bottom_border_format)
+
+            # Set formats in case there are multiple unit rows (if using CombinedResults functionality)
+            if sheetname in ['Input', 'Results', 'Calc']:
+                for row in np.where(df['Lab. #'] == '')[0]:
+                    if row != 0:
+                        worksheet.set_row(row+1, None, bottom_top_border_format)
 
             for idx, col in enumerate(df.columns):  # loop through all columns
 

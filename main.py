@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QTabWidget, QMessageBox, QStyleFactory, QShortcut
 from PyQt5.QtGui import QIcon, QKeySequence
 import sys
 import os
+import pandas as pd
 
 import Globals
 from Analyzer import Analyzer
@@ -19,8 +20,6 @@ import webbrowser
 from Settings import Settings
 
 from ConstantsDialog import loadConstants
-
-import AnalyzerMethods
 
 class Window(QtWidgets.QMainWindow):
 
@@ -132,7 +131,6 @@ class Window(QtWidgets.QMainWindow):
         self.analyzer.set_constants(constants)
         self.analyzer.set_specific_constants(self.inputTab.get_specific_constants())
         self.analyzer.set_metadata(metadatapath, self.ratioBuilder.ratios)
-        self.analyzer.set_settings(self.settings)
 
         options_dict = {Globals.MEAN_METHOD: Util.keyByValue(self.inspectTab.mean_option_dict, self.ratioBuilder.mean_option),
                         Globals.DEV_METHOD: Util.keyByValue(self.inspectTab.dev_option_dict, self.ratioBuilder.dev_option)}
@@ -141,7 +139,7 @@ class Window(QtWidgets.QMainWindow):
             self.analyzer.analyze(self.ratioBuilder.ratios,
                                   options_dict=options_dict,
                                   output_path=self.inputTab.getDataOutputPath())
-            self.analysisTab.display()
+            self.analysisTab.display(self.analyzer.results, self.analyzer.standard)
         except PermissionError:
             self.analysisTab.display()
             error_dialog = QtWidgets.QMessageBox()
@@ -149,6 +147,52 @@ class Window(QtWidgets.QMainWindow):
             error_dialog.setWindowTitle('Permission error')
             error_dialog.setText(
                 'Could not save \"Results.xlsx\". Please close the related \"Results.xlsx\" file if it is open.')
+            error_dialog.exec_()
+
+    def startCombinedResultsAnalysis(self, resultsPaths):
+        self.analyzer.set_path(Util.path_head(resultsPaths[0]), find_standard=False)
+        constants = loadConstants(self.inputTab.get_constants_path())
+        self.analyzer.set_constants(constants)
+        self.analyzer.set_specific_constants(self.inputTab.get_specific_constants())
+
+        results_dicts = []
+        standards = []
+
+        for file in resultsPaths:
+            ratios, metadata = Util.get_ratios_and_metadata_from_results(file)
+            ratios = ratios[ratios['Lab. #'].notna()]
+            ratios.index = list(range(len(ratios)))
+
+            self.analyzer.standard = Util.get_standard_number_from_df(ratios)
+            self.analyzer.set_metadata_df(metadata)
+
+            results_dict = self.analyzer.analyze(ratios, write_results_file=False, options_dict=None)
+            results_dicts.append(results_dict)
+            standards.append(self.analyzer.standard)
+
+        all_inputs = pd.concat([entry['Input'] for entry in results_dicts])
+        all_calcs = pd.concat([entry['Calc'] for entry in results_dicts])
+        all_results = pd.concat([entry['Results'] for entry in results_dicts])
+        all_constants = pd.concat([entry['Constants'] for entry in results_dicts])
+        all_options = pd.concat([entry['Options'] for entry in results_dicts])
+
+        all_dict = {
+            'Input': all_inputs,
+            'Calc': all_calcs,
+            'Results': all_calcs,
+            'Constants': all_constants
+        }
+
+        try:
+            self.analyzer.writeToFile(all_dict, fileTitle='CombinedResults')
+            self.analysisTab.display(all_results, standards)
+        except PermissionError:
+            self.analysisTab.display(all_results, standards)
+            error_dialog = QtWidgets.QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setWindowTitle('Permission error')
+            error_dialog.setText(
+                'Could not save \"CombinedResults.xlsx\". Please close the related \"CombinedResults.xlsx\" file if it is open.')
             error_dialog.exec_()
 
     def showHelp(self):
