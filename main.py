@@ -179,7 +179,7 @@ class Window(QtWidgets.QMainWindow):
         all_dict = {
             'Input': all_inputs,
             'Calc': all_calcs,
-            'Results': all_calcs,
+            'Results': all_results,
             'Constants': all_constants
         }
 
