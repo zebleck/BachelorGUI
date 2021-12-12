@@ -22,6 +22,7 @@ analysisConstants = {
     'blank232': ('Blank 232 Non-Standard (ng)', 'float'), 'blank232S': ('Blank 232 Standard (ng)', 'float'),
     'blank234': ('Blank 234 Non-Standard (fg)', 'float'), 'blank234S': ('Blank 234 Standard (fg)', 'float'),
     'blank238': ('Blank 238 Non-Standard (ng)', 'float'), 'blank238S': ('Blank 238 Standard (ng)', 'float'),
+    'sp_blank230': ('Spikeblank 230 (ng)', 'float'),
     'ch_blank230': ('Ch. Bl. 230 Non-Standard (fg)', 'float'), 'ch_blank230S': ('Ch. Bl. 230 Standard (fg)', 'float'),
     'a230232_init': ('A230Th232Th Init.', 'float'), 'a230232_init_err': ('A230Th232Th Init. Error (abs.)', 'float')
 }
