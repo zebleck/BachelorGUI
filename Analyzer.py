@@ -63,7 +63,7 @@ class Analyzer:
         self.tri233 = constants['tri233']
         self.tri229 = constants['tri229']
 
-        self.spBlank230 = constants['spBlank230']
+        self.spBlank230 = constants['sp_blank230']
         self.blank234 = constants['blank234']
         self.blank234S = constants['blank234S']
         self.blank238 = constants['blank238']
@@ -285,7 +285,7 @@ class Analyzer:
         # 230Th
         th230pgg = ((ratios['Ratio 230/229'] * self.tri229 * 10 ** -9 * self.metadata['TriSp13 (g)'] * (
                 230.0331338 / 229.031762))
-                    - (self.spBlank230 * self.blanks['TriSp13(g)'] * 10 ** -9 +
+                    - (self.spBlank230 * self.metadata['TriSp13 (g)'] * 10 ** -15 +
                        self.blanks['Ch. Blank 230 (fg)'] * 10 ** -15)) * 10 ** 12 / self.metadata['Einwaage (g)']
         th230pgg_err = th230pgg * ratios['Error (%) 230/229'] / 100
         th230dpmg = (th230pgg / 230.0331338) * self.NA * 10 ** -12 * self.lambda230 / (365.2425 * 24 * 60)
